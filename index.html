@@ -3,179 +3,164 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>全网吐槽墙</title>
-    <meta name="description" content="匿名说出你想说的，每条吐槽都是人民群众的声音">
+    <title>弹幕吐槽墙</title>
+    <meta name="description" content="匿名吐槽弹幕墙">
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: -apple-system, "Microsoft YaHei", sans-serif;
-            background: #0f0f0f;
-            color: #e0e0e0;
-            min-height: 100vh;
-        }
-        .header {
-            background: linear-gradient(135deg, #1a1a2e, #16213e);
-            padding: 40px 20px;
-            text-align: center;
-            border-bottom: 1px solid #333;
-        }
-        .header h1 {
-            font-size: 2.5em;
-            background: linear-gradient(90deg, #ff6b6b, #ffd93d, #6bcb77);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 10px;
-        }
-        .header p { color: #888; font-size: 1.1em; }
-        .container { max-width: 800px; margin: 0 auto; padding: 20px; }
-        
-        .input-area {
-            background: #1a1a1a;
-            border: 1px solid #333;
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 30px;
-        }
-        .input-area textarea {
-            width: 100%;
-            height: 100px;
-            background: #222;
-            border: 1px solid #444;
-            border-radius: 8px;
-            padding: 12px;
-            color: #e0e0e0;
-            font-size: 16px;
-            resize: vertical;
-            font-family: inherit;
-        }
-        .input-area textarea:focus { outline: none; border-color: #ff6b6b; }
-        .input-area .info {
+            background: #0a0a0a;
+            color: #fff;
+            height: 100vh;
+            overflow: hidden;
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 12px;
-            gap: 10px;
+            flex-direction: column;
         }
-        .input-area input[type="text"] {
+
+        /* ===== 弹幕容器 ===== */
+        #danmaku-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            background: radial-gradient(ellipse at center, #1a1a2e 0%, #0a0a0a 70%);
+        }
+
+        .danmaku {
+            position: absolute;
+            white-space: nowrap;
+            font-size: 18px;
+            font-weight: bold;
+            padding: 6px 14px;
+            border-radius: 20px;
+            pointer-events: none;
+            animation: fly 8s linear forwards;
+            text-shadow: 0 0 10px rgba(0,0,0,0.8);
+        }
+
+        @keyframes fly {
+            0% { transform: translateX(100vw); opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateX(-100%); opacity: 0; }
+        }
+
+        /* 不同颜色 */
+        .danmaku:nth-child(6n+1) { background: rgba(255,107,107,0.25); color: #ff6b6b; }
+        .danmaku:nth-child(6n+2) { background: rgba(255,217,61,0.25); color: #ffd93d; }
+        .danmaku:nth-child(6n+3) { background: rgba(107,203,119,0.25); color: #6bcb77; }
+        .danmaku:nth-child(6n+4) { background: rgba(77,166,255,0.25); color: #4da6ff; }
+        .danmaku:nth-child(6n+5) { background: rgba(255,128,255,0.25); color: #ff80ff; }
+        .danmaku:nth-child(6n+0) { background: rgba(255,200,100,0.25); color: #ffc864; }
+
+        .danmaku .nick {
+            font-size: 12px;
+            opacity: 0.7;
+            margin-right: 6px;
+        }
+
+        /* ===== 底部输入区 ===== */
+        .input-area {
+            background: linear-gradient(0deg, #1a1a1a, #0f0f0f);
+            padding: 20px 20px 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            border-top: 1px solid #222;
+        }
+
+        .input-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            max-width: 700px;
+        }
+
+        .input-row input[type="text"] {
             flex: 1;
             background: #222;
             border: 1px solid #444;
-            border-radius: 8px;
-            padding: 10px 12px;
+            border-radius: 25px;
+            padding: 12px 20px;
             color: #e0e0e0;
-            font-size: 14px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.2s;
         }
-        .input-area input[type="text"]:focus { outline: none; border-color: #ff6b6b; }
-        .input-area .char-count { color: #666; font-size: 12px; }
-        .btn {
+        .input-row input[type="text"]:focus { border-color: #ff6b6b; }
+
+        .input-row .btn {
             background: linear-gradient(135deg, #ff6b6b, #ee5a24);
             color: white;
             border: none;
-            border-radius: 8px;
-            padding: 10px 24px;
+            border-radius: 25px;
+            padding: 12px 28px;
             font-size: 16px;
             cursor: pointer;
             transition: transform 0.2s;
             white-space: nowrap;
         }
-        .btn:hover { transform: scale(1.05); }
-        .btn:active { transform: scale(0.95); }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .input-row .btn:hover { transform: scale(1.05); }
+        .input-row .btn:active { transform: scale(0.95); }
+        .input-row .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
-        .post {
-            background: #1a1a1a;
-            border: 1px solid #333;
-            border-radius: 12px;
-            padding: 16px 20px;
-            margin-bottom: 16px;
-            transition: border-color 0.2s;
-        }
-        .post:hover { border-color: #555; }
-        .post .meta {
+        .input-meta {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            margin-bottom: 8px;
+            gap: 10px;
+            width: 100%;
+            max-width: 700px;
             font-size: 13px;
             color: #666;
         }
-        .post .nickname { color: #ffd93d; font-weight: bold; }
-        .post .time { color: #555; }
-        .post .content {
-            font-size: 15px;
-            line-height: 1.6;
-            word-break: break-word;
-        }
-        .post .actions {
-            margin-top: 10px;
-            display: flex;
-            gap: 16px;
+
+        .input-meta input {
+            background: #222;
+            border: 1px solid #444;
+            border-radius: 15px;
+            padding: 6px 14px;
+            color: #e0e0e0;
             font-size: 13px;
+            width: 120px;
+            outline: none;
         }
-        .post .actions span {
-            cursor: pointer;
-            color: #666;
-            transition: color 0.2s;
-            user-select: none;
-        }
-        .post .actions span:hover { color: #ff6b6b; }
+        .input-meta input:focus { border-color: #888; }
+        .input-meta .char-count { margin-left: auto; }
 
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: #555;
-        }
-        .empty-state .big-emoji { font-size: 64px; margin-bottom: 20px; }
-
-        .footer {
-            text-align: center;
-            padding: 30px;
-            color: #444;
-            font-size: 13px;
-        }
-
-        .loading { text-align: center; padding: 30px; color: #555; }
         .toast {
-            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-            background: #333; color: #e0e0e0; padding: 12px 24px; border-radius: 8px;
+            position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.8); color: #e0e0e0;
+            padding: 10px 24px; border-radius: 20px;
             font-size: 14px; display: none; z-index: 999;
+            backdrop-filter: blur(10px);
         }
 
-        @media (max-width: 600px) {
-            .header h1 { font-size: 1.8em; }
-            .input-area .info { flex-direction: column; }
-            .input-area input[type="text"] { width: 100%; }
-            .btn { width: 100%; }
+        .hint {
+            font-size: 12px;
+            color: #444;
+            text-align: center;
+            margin-top: 4px;
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>🗣️ 全网吐槽墙</h1>
-        <p>匿名说出你想说的 — 所有人都能看到</p>
-    </div>
-    
-    <div class="container">
-        <div class="input-area">
-            <textarea id="content" placeholder="写你想吐槽的..." maxlength="500"></textarea>
-            <div class="info">
-                <input type="text" id="nickname" placeholder="匿名用户" maxlength="20">
-                <div>
-                    <span class="char-count"><span id="counter">0</span>/500</span>
-                    <button class="btn" id="submitBtn" onclick="submitPost()">发送吐槽</button>
-                </div>
-            </div>
+
+    <!-- 弹幕容器 -->
+    <div id="danmaku-container"></div>
+
+    <!-- 输入区 -->
+    <div class="input-area">
+        <div class="input-row">
+            <input type="text" id="content" placeholder="写你想吐槽的..." maxlength="100" autofocus>
+            <button class="btn" id="submitBtn" onclick="submitPost()">发射弹幕</button>
         </div>
-        
-        <div id="posts">
-            <div class="loading">加载中...</div>
+        <div class="input-meta">
+            <input type="text" id="nickname" placeholder="匿名" maxlength="10">
+            <span class="char-count"><span id="counter">0</span>/100</span>
         </div>
-        
-        <div class="footer">
-            数据实时共享 · Realtime Database · 开源源码
-        </div>
+        <div class="hint">按 Enter 发射 · 全部匿名 · 人人可见</div>
     </div>
 
     <div class="toast" id="toast"></div>
@@ -195,86 +180,64 @@
         const db = firebase.database();
         const postsRef = db.ref('posts');
 
-        // 实时加载吐槽
-        postsRef.orderByChild('createdAt').limitToLast(100).on('value', (snapshot) => {
-            const container = document.getElementById('posts');
+        const container = document.getElementById('danmaku-container');
+
+        // 每条新吐槽 → 发射弹幕
+        postsRef.orderByChild('createdAt').limitToLast(1).on('child_added', (snapshot) => {
             const data = snapshot.val();
-            
-            if (!data) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <div class="big-emoji">💬</div>
-                        <p>还没有吐槽，快来当第一个！</p>
-                    </div>
-                `;
-                return;
-            }
+            if (!data || !data.content) return;
 
-            // 转为数组并按时间倒序
-            const posts = Object.entries(data).map(([key, val]) => ({key, ...val}));
-            posts.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+            // 随机行数
+            const lines = 6;
+            const lineHeight = window.innerHeight / lines;
+            const line = Math.floor(Math.random() * lines);
+            const top = line * lineHeight + lineHeight * 0.2;
 
-            let html = '';
-            posts.forEach(post => {
-                html += `
-                    <div class="post">
-                        <div class="meta">
-                            <span class="nickname">${escapeHtml(post.nickname || '匿名用户')}</span>
-                            <span class="time">${post.time || '刚刚'}</span>
-                        </div>
-                        <div class="content">${escapeHtml(post.content)}</div>
-                        <div class="actions">
-                            <span onclick="likePost('${post.key}')">❤️ ${post.likes || 0}</span>
-                        </div>
-                    </div>
-                `;
-            });
-            container.innerHTML = html;
+            // 随机速度
+            const duration = 6 + Math.random() * 4;
+
+            const el = document.createElement('div');
+            el.className = 'danmaku';
+            el.innerHTML = `<span class="nick">${escapeHtml(data.nickname || '匿名')}</span>${escapeHtml(data.content)}`;
+            el.style.top = top + 'px';
+            el.style.animationDuration = duration + 's';
+
+            container.appendChild(el);
+
+            // 动画结束后移除
+            setTimeout(() => el.remove(), (duration + 1) * 1000);
         });
 
-        // 提交吐槽
+        // 提交
         async function submitPost() {
             const content = document.getElementById('content').value.trim();
-            const nickname = document.getElementById('nickname').value.trim() || '匿名用户';
+            const nickname = document.getElementById('nickname').value.trim() || '匿名';
             
             if (!content) {
-                showToast('写点内容再发吧！');
+                showToast('写点内容再发射！');
                 return;
             }
 
             const btn = document.getElementById('submitBtn');
             btn.disabled = true;
-            btn.textContent = '发送中...';
+            btn.textContent = '发射中...';
 
             try {
                 await postsRef.push({
                     nickname: nickname,
                     content: content,
                     likes: 0,
-                    time: new Date().toLocaleString('zh-CN'),
                     createdAt: firebase.database.ServerValue.TIMESTAMP
                 });
-
                 document.getElementById('content').value = '';
                 document.getElementById('counter').textContent = '0';
-                showToast('吐槽已发送！');
+                showToast('弹幕已发射！');
             } catch (e) {
-                showToast('发送失败');
+                showToast('发射失败');
             }
 
             btn.disabled = false;
-            btn.textContent = '发送吐槽';
-        }
-
-        // 点赞
-        async function likePost(key) {
-            const ref = db.ref('posts/' + key + '/likes');
-            try {
-                const snap = await ref.once('value');
-                await ref.set((snap.val() || 0) + 1);
-            } catch (e) {
-                showToast('操作失败');
-            }
+            btn.textContent = '发射弹幕';
         }
 
         function escapeHtml(text) {
@@ -292,6 +255,14 @@
 
         document.getElementById('content').addEventListener('input', function() {
             document.getElementById('counter').textContent = this.value.length;
+        });
+
+        // Enter 发送
+        document.getElementById('content').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                submitPost();
+            }
         });
     </script>
 </body>
