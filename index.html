@@ -45,6 +45,8 @@
         .topbar .tabs .tab.active{background:var(--card);color:var(--text);}
         .topbar .stats{font-size:12px;color:var(--text3);display:flex;align-items:center;gap:6px;}
         .topbar .stats b{color:var(--green);font-weight:700;}
+        .topbar .stats .lang-btn{font-size:14px;cursor:pointer;margin-left:6px;transition:transform .2s;display:inline-block;}
+        .topbar .stats .lang-btn:hover{transform:scale(1.2);}
 
         /* ===== 主体 ===== */
         .main{flex:1;display:flex;overflow:hidden;position:relative;}
@@ -237,7 +239,7 @@
             <div class="tab" data-view="hot" onclick="switchView('hot')">🔥 热榜</div>
             <div class="tab" data-view="mine" onclick="switchView('mine')">👤 我的</div>
         </div>
-        <div class="stats"><b id="sCount">0</b> 条弹幕</div>
+        <div class="stats"><b id="sCount">0</b> 条弹幕 <span class="lang-btn" onclick="toggleLang()" id="langBtn">🌐</span></div>
     </div>
 
     <!-- 主体 -->
@@ -289,7 +291,9 @@
                 <option value="医生">🏥 医生</option>
                 <option value="销售">📊 销售</option>
                 <option value="神秘人">🥷 神秘人</option>
+                <option value="__custom__">✏️ 自定义...</option>
             </select>
+            <input class="ni" type="text" id="customJob" placeholder="输入职业" maxlength="10" style="display:none;">
             <input class="ni" type="text" id="nick" placeholder="匿名" maxlength="10">
             <span class="cc"><span id="counter">0</span>/120</span>
         </div>
@@ -313,7 +317,77 @@
         const JT={'打工人':'j-worker','老板':'j-boss','学生':'j-student','老师':'j-teacher','程序员':'j-coder','设计师':'j-designer','医生':'j-doctor','销售':'j-seller','神秘人':'j-masked'};
         const JE={'打工人':'💼','老板':'👔','学生':'🎒','老师':'📚','程序员':'💻','设计师':'🎨','医生':'🏥','销售':'📊','神秘人':'🥷'};
         const AT={'打工人':'a-worker','老板':'a-boss','学生':'a-student','老师':'a-teacher','程序员':'a-coder','设计师':'a-designer','医生':'a-doctor','销售':'a-seller','神秘人':'a-masked'};
-        // 头像用职业emoji首字符
+        const AC={'打工人':'#f3727f','老板':'#539df5','学生':'#1ed760','老师':'#ffa42b','程序员':'#1ed760','设计师':'#ffa42b','医生':'#f3727f','销售':'#539df5','神秘人':'#95a5a6'};
+
+        // ====== 多语言 ======
+        let currentLang='zh';
+        const LANG={
+            zh:{
+                title:'吐槽墙',placeholder:'今天想吐槽什么？',send:'发射',sending:'发送中',
+                empty:'还没有吐槽',stat:'条弹幕',hot:'🔥 热榜',dm:'✨ 弹幕',mine:'👤 我的',
+                all:'全部',life:'生活',work:'工作',love:'情感',funny:'搞笑',other:'其他',
+                hint:'⏎ 发送 · 选择分类和身份 · 全部匿名',toast:'已发送 ✦',fill:'写点内容',
+                cat:'📂 分类',hotTitle:'🔥 热榜 Top 10',loading:'加载中...',anon:'匿名',
+                custom:'✏️ 自定义...',jobPlaceholder:'输入职业'
+            },
+            en:{
+                title:'Vent Wall',placeholder:'What\'s on your mind?',send:'Send',sending:'Sending...',
+                empty:'No posts yet',stat:'posts',hot:'🔥 Trending',dm:'✨ Live',mine:'👤 Me',
+                all:'All',life:'Life',work:'Work',love:'Love',funny:'Funny',other:'Other',
+                hint:'⏎ Send · Choose role · Anonymous',toast:'Sent ✦',fill:'Write something',
+                cat:'📂 Categories',hotTitle:'🔥 Top 10',loading:'Loading...',anon:'Anonymous',
+                custom:'✏️ Custom...',jobPlaceholder:'Enter job'
+            },
+            ja:{
+                title:'愚痴の壁',placeholder:'何を愚痴りたい？',send:'送信',sending:'送信中...',
+                empty:'まだ投稿がありません',stat:'件',hot:'🔥 トレンド',dm:'✨ ライブ',mine:'👤 マイ',
+                all:'すべて',life:'生活',work:'仕事',love:'恋愛',funny:'面白い',other:'その他',
+                hint:'⏎ 送信 · 匿名',toast:'送信完了 ✦',fill:'内容を入力',
+                cat:'📂 カテゴリ',hotTitle:'🔥 トップ10',loading:'読み込み中...',anon:'匿名',
+                custom:'✏️ カスタム...',jobPlaceholder:'職業を入力'
+            },
+            ko:{
+                title:'불평벽',placeholder:'무슨 불평이 있나요?',send:'보내기',sending:'보내는 중...',
+                empty:'아직 글이 없습니다',stat:'개',hot:'🔥 인기',dm:'✨ 실시간',mine:'👤 내',
+                all:'전체',life:'생활',work:'직장',love:'연애',funny:'웃김',other:'기타',
+                hint:'⏎ 보내기 · 익명',toast:'보냄 ✦',fill:'내용 입력',
+                cat:'📂 카테고리',hotTitle:'🔥 톱10',loading:'로딩 중...',anon:'익명',
+                custom:'✏️ 커스텀...',jobPlaceholder:'직업 입력'
+            }
+        };
+
+        function t(key){return (LANG[currentLang]||LANG.zh)[key]||key;}
+
+        function toggleLang(){
+            const langs=['zh','en','ja','ko'];
+            const idx=langs.indexOf(currentLang);
+            currentLang=langs[(idx+1)%langs.length];
+            applyLang();
+        }
+
+        function applyLang(){
+            const l=LANG[currentLang];
+            document.querySelector('.logo').innerHTML='<div class="mark">💬</div>'+l.title;
+            document.querySelector('[data-view="dm"]').textContent=l.dm;
+            document.querySelector('[data-view="hot"]').textContent=l.hot;
+            document.querySelector('[data-view="mine"]').textContent=l.mine;
+            document.getElementById('content').placeholder=l.placeholder;
+            document.getElementById('subBtn').textContent=l.send;
+            document.querySelector('.hint').textContent=l.hint;
+            document.querySelector('.sec-title').textContent=l.cat;
+            // 侧栏分类
+            const catItems=document.querySelectorAll('.sidebar .item');
+            const catKeys=['all','生活','工作','情感','搞笑','其他'];
+            const catLabels=[l.all,l.life,l.work,l.love,l.funny,l.other];
+            catItems.forEach((el,i)=>{
+                if(i<catLabels.length) el.innerHTML='<span class="ic">'+el.querySelector('.ic').textContent+'</span>'+catLabels[i]+'<span class="cnt" id="c'+catKeys[i]+'">0</span>';
+            });
+            document.querySelectorAll('.sec-title')[1].textContent=l.hotTitle;
+            document.getElementById('langBtn').textContent={'zh':'🇨🇳','en':'🇺🇸','ja':'🇯🇵','ko':'🇰🇷'}[currentLang];
+            document.getElementById('langBtn').title=currentLang.toUpperCase();
+            // 热点也重新生成
+            shuffleHot();
+        }
 
         let total=0, seen={}, catCount={}, curFilter='all', allPosts=[];
         let queue=[], isPlaying=false;
@@ -436,9 +510,9 @@
         async function submit(){
             const c=document.getElementById('content').value.trim();
             const n=document.getElementById('nick').value.trim()||'匿名';
-            const j=document.getElementById('jobS').value;
+            const j=getJob();
             const ca=document.getElementById('catS').value;
-            if(!c){toast('写点内容再发射');return;}
+            if(!c){toast(t('fill'));return;}
             const btn=document.getElementById('subBtn');
             btn.disabled=true; btn.textContent='发送中';
             try{
@@ -451,6 +525,23 @@
 
         function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML;}
         function toast(m){const t=document.getElementById('toast');t.textContent=m;t.style.display='block';setTimeout(()=>t.style.display='none',1800);}
+
+        // 自定义职业切换
+        document.getElementById('jobS').addEventListener('change',function(){
+            const cj=document.getElementById('customJob');
+            cj.style.display=this.value==='__custom__'?'inline-block':'none';
+            if(this.value==='__custom__') cj.focus();
+        });
+
+        // 获取职业值
+        function getJob(){
+            const sel=document.getElementById('jobS');
+            if(sel.value==='__custom__'){
+                const cj=document.getElementById('customJob').value.trim();
+                return cj||'神秘人';
+            }
+            return sel.value;
+        }
         document.getElementById('content').addEventListener('input',function(){document.getElementById('counter').textContent=this.value.length;});
         document.getElementById('content').addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();submit();}});
 
