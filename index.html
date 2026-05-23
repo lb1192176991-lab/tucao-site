@@ -109,9 +109,22 @@
             85%{opacity:1}
             100%{transform:translateX(-120%) scale(.95);opacity:0}
         }
-        .dm .j{
-            font-size:10px;padding:2px 8px;border-radius:var(--pill);font-weight:600;
+        .dm .j{font-size:10px;padding:2px 10px;border-radius:var(--pill);font-weight:600;}
+        /* 头像圆点 */
+        .dm .av{
+            width:26px;height:26px;border-radius:50%;flex-shrink:0;
+            display:flex;align-items:center;justify-content:center;
+            font-size:11px;font-weight:600;color:#000;margin-right:2px;
         }
+        .a-boss{background:linear-gradient(135deg,#f3727f,#e74c3c)}
+        .a-worker{background:linear-gradient(135deg,#539df5,#2980b9)}
+        .a-student{background:linear-gradient(135deg,#1ed760,#27ae60)}
+        .a-teacher{background:linear-gradient(135deg,#ffa42b,#e67e22)}
+        .a-coder{background:linear-gradient(135deg,#1ed760,#17b34a)}
+        .a-designer{background:linear-gradient(135deg,#ffa42b,#f39c12)}
+        .a-doctor{background:linear-gradient(135deg,#f3727f,#c0392b)}
+        .a-seller{background:linear-gradient(135deg,#539df5,#3498db)}
+        .a-masked{background:linear-gradient(135deg,#95a5a6,#7f8c8d)}
         .j-boss{background:rgba(243,114,127,.15);color:#f3727f}
         .j-worker{background:rgba(83,157,245,.15);color:#539df5}
         .j-student{background:rgba(30,215,96,.15);color:#1ed760}
@@ -276,8 +289,48 @@
 
         const JT={'打工人':'j-worker','老板':'j-boss','学生':'j-student','老师':'j-teacher','程序员':'j-coder','设计师':'j-designer','医生':'j-doctor','销售':'j-seller','神秘人':'j-masked'};
         const JE={'打工人':'💼','老板':'👔','学生':'🎒','老师':'📚','程序员':'💻','设计师':'🎨','医生':'🏥','销售':'📊','神秘人':'🥷'};
+        const AT={'打工人':'a-worker','老板':'a-boss','学生':'a-student','老师':'a-teacher','程序员':'a-coder','设计师':'a-designer','医生':'a-doctor','销售':'a-seller','神秘人':'a-masked'};
+        // 头像用职业emoji首字符
 
         let total=0, seen={}, catCount={}, curFilter='all', allPosts=[];
+        let queue=[], isPlaying=false;
+
+        // 弹幕队列循环播放
+        function startLoop(){
+            if(isPlaying||queue.length===0) return;
+            isPlaying=true;
+            function next(){
+                if(queue.length===0){isPlaying=false; return;}
+                const item=queue.shift();
+                launch(item);
+                setTimeout(next, 800+Math.random()*600);
+            }
+            // 先快速发射一批
+            for(let i=0;i<Math.min(8,queue.length);i++){
+                const item=queue.shift();
+                setTimeout(()=>launch(item), i*300);
+            }
+            setTimeout(()=>{
+                isPlaying=false;
+                if(queue.length>0) startLoop();
+            }, Math.min(8,queue.length)*300+500);
+        }
+
+        // 补充队列
+        function feedQueue(){
+            if(allPosts.length===0) return;
+            // 随机选一条，不要连续重复
+            const pool=allPosts.filter(p=>p&&p.content);
+            if(pool.length===0) return;
+            const pick=pool[Math.floor(Math.random()*pool.length)];
+            queue.push(pick);
+            if(!isPlaying) startLoop();
+        }
+
+        // 每条弹幕移除后补充新弹幕
+        function scheduleNext(){
+            setTimeout(feedQueue, 1000+Math.random()*2000);
+        }
 
         ref.once('value', snap => {
             const d=snap.val(); if(!d) return;
@@ -294,6 +347,8 @@
                 }
             });
             updateCounts(); updateHot();
+            // 历史加载完后启动循环
+            setTimeout(()=>{for(let i=0;i<5;i++)feedQueue();}, es.length*100+500);
         });
 
         ref.limitToLast(1).on('child_added', snap => {
@@ -313,12 +368,14 @@
             const line=Math.floor(Math.random()*lines);
             const top=line*lh+lh*0.2; const dur=9+Math.random()*5;
             const job=d.job||'神秘人'; const tag=JT[job]||'j-masked'; const em=JE[job]||'🥷';
+            const av=AT[job]||'a-masked';
             const el=document.createElement('div');
             el.className='dm';
-            el.innerHTML=`<span class="j ${tag}">${em} ${job}</span><span class="n">${esc(d.nickname||'匿名')}</span><span class="t">${esc(d.content)}</span>`;
+            el.innerHTML=`<span class="av ${av}">${em}</span><span class="j ${tag}">${job}</span><span class="n">${esc(d.nickname||'匿名')}</span><span class="t">${esc(d.content)}</span>`;
             el.style.top=top+'px'; el.style.animationDuration=dur+'s';
             ctx.appendChild(el);
-            setTimeout(()=>el.remove(),(dur+2)*1000);
+            // 移除后补充队列
+            setTimeout(()=>{scheduleNext();},(dur+2)*1000);
         }
 
         function updateCounts(){
