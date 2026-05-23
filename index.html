@@ -7,8 +7,7 @@
     <title>吐槽墙 · 匿名社区</title>
     <meta name="description" content="匿名吐槽弹幕社区，工作生活情感，想吐就吐">
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
-    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
             --bg:#0f0f0f; --surface:#161616; --card:#1e1e1e; --card-hover:#252525;
@@ -322,9 +321,9 @@
     <div class="toast" id="toast"></div>
 
     <script>
-        const FB={apiKey:"AIzaSyDA-zk7rLU7o8litC1BlURyocYprLqAb80",authDomain:"planning-with-ai-e9272.firebaseapp.com",databaseURL:"https://venting-and-complaining-default-rtdb.firebaseio.com",projectId:"planning-with-ai-e9272",storageBucket:"planning-with-ai-e9272.firebasestorage.app",messagingSenderId:"207850905652",appId:"1:207850905652:web:f158f5b24b98ebad93aa61"};
-        firebase.initializeApp(FB);
-        const db=firebase.database(), ref=db.ref('posts');
+        const SUPABASE_URL = 'https://xvnkmvsdpbyhjlmikzvn.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_TdiUUo7VIp621zQ-Jq8l8A_WxAVcapu';
+        const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         const ctx=document.getElementById('dm-ctx'), sCount=document.getElementById('sCount'), empty=document.getElementById('emptyBox');
         const hotEl=document.getElementById('hotList');
 
@@ -454,36 +453,45 @@
             setTimeout(feedQueue, 1000+Math.random()*2000);
         }
 
-        ref.once('value', snap => {
-            const d=snap.val(); if(!d) return;
-            empty.style.display='none';
-            const es=Object.entries(d); total=es.length; sCount.textContent=total;
-            allPosts=[];
-            es.forEach(([k,v],i)=>{
-                seen[k]=1;
-                if(v&&v.content){
+        // 加载历史数据
+        async function loadPosts() {
+            const { data, error } = await sb.from('posts').select('*').order('created_at', { ascending: false }).limit(200);
+            if (error) { console.error(error); return; }
+            if (!data || data.length === 0) return;
+            empty.style.display = 'none';
+            total = data.length; sCount.textContent = total;
+            allPosts = [];
+            data.reverse().forEach((v, i) => {
+                seen[v.id] = 1;
+                if (v && v.content) {
                     allPosts.push(v);
-                    const c=v.category||'其他';
-                    catCount[c]=(catCount[c]||0)+1;
-                    if(curFilter=='all'||c==curFilter) setTimeout(()=>launch(v),i*100);
+                    const c = v.category || '其他';
+                    catCount[c] = (catCount[c] || 0) + 1;
+                    if (curFilter === 'all' || c === curFilter) setTimeout(() => launch(v), i * 100);
                 }
             });
             updateCounts(); updateHot();
-            // 历史加载完后启动循环
-            setTimeout(()=>{for(let i=0;i<5;i++)feedQueue();}, es.length*100+500);
-        });
+            setTimeout(() => { for (let i = 0; i < 5; i++) feedQueue(); }, data.length * 100 + 500);
+        }
+        loadPosts();
 
-        ref.limitToLast(1).on('child_added', snap => {
-            const d=snap.val();
-            if(!d||!d.content||seen[snap.key]) return;
-            seen[snap.key]=1; empty.style.display='none';
-            total++; sCount.textContent=total;
-            const c=d.category||'其他'; catCount[c]=(catCount[c]||0)+1;
-            updateCounts();
-            allPosts.push(d);
-            if(curFilter=='all'||c==curFilter) launch(d);
-            updateHot();
-        });
+        // 实时监听新数据 (每5秒轮询)
+        let lastTime = Date.now();
+        setInterval(async () => {
+            const { data } = await sb.from('posts').select('*').gt('created_at', lastTime).order('created_at', { ascending: true });
+            if (!data || data.length === 0) return;
+            lastTime = Date.now();
+            data.forEach(d => {
+                if (!d || !d.content || seen[d.id]) return;
+                seen[d.id] = 1; empty.style.display = 'none';
+                total++; sCount.textContent = total;
+                const c = d.category || '其他'; catCount[c] = (catCount[c] || 0) + 1;
+                updateCounts();
+                allPosts.push(d);
+                if (curFilter === 'all' || c === curFilter) launch(d);
+                updateHot();
+            });
+        }, 5000);
 
         function launch(d){
             const lines=5; const lh=window.innerHeight/lines;
@@ -541,10 +549,18 @@
             const btn=document.getElementById('subBtn');
             btn.disabled=true; btn.textContent='发送中';
             try{
-                await ref.push({nickname:n,content:c,job:j,category:ca,likes:0,createdAt:firebase.database.ServerValue.TIMESTAMP});
+                const { error } = await sb.from('posts').insert({
+                    nickname: n,
+                    content: c,
+                    job: j,
+                    category: ca,
+                    likes: 0,
+                    created_at: Date.now()
+                });
+                if (error) throw error;
                 document.getElementById('content').value=''; document.getElementById('counter').textContent='0';
                 toast('✨ 已发射');
-            }catch(e){toast('发送失败');}
+            }catch(e){toast('发送失败'); console.error(e);}
             btn.disabled=false; btn.textContent='发射';
         }
 
