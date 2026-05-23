@@ -3,57 +3,72 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>吐槽墙 · 匿名发声</title>
-<meta name="description" content="匿名吐槽社区，没人知道你是谁，但你的声音会被听见。">
-<meta property="og:title" content="吐槽墙 · 匿名发声">
-<meta property="og:description" content="匿名吐槽社区，没人知道你是谁，但你的声音会被听见。">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231ed760'/%3E%3Ctext x='16' y='23' text-anchor='middle' font-size='18' fill='black'%3E💬%3C/text%3E%3C/svg%3E">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<title>吐槽墙</title>
+<meta name="description" content="匿名吐槽，想说什么就说。">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231ed760'/%3E%3Ctext x='16' y='23' text-anchor='middle' font-size='18' fill='black'%3E💬%3C/text%3E%3C/svg%3E">
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:'Inter',-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;background:#0a0a0a;color:#fff;height:100vh;overflow:hidden;}
+body{
+    font-family:-apple-system, system-ui, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background:#000;color:#fff;
+    height:100vh;overflow:hidden;
+    display:flex;flex-direction:column;
+}
 
-/* 全屏弹幕层 */
-#danmaku-layer{
-    position:fixed;top:0;left:0;right:0;bottom:120px;
-    overflow:hidden;background:#0a0a0a;
-    background-image:
-        radial-gradient(ellipse at 20% 30%, rgba(30,215,96,0.04) 0%, transparent 50%),
-        radial-gradient(ellipse at 80% 70%, rgba(108,92,231,0.03) 0%, transparent 50%);
+/* ====== 顶栏 ====== */
+nav{
+    display:flex;align-items:center;justify-content:center;
+    height:48px;padding:0 20px;
+    background:rgba(0,0,0,0.8);backdrop-filter:saturate(180%) blur(20px);
+    -webkit-backdrop-filter:saturate(180%) blur(20px);
+    border-bottom:1px solid rgba(255,255,255,0.04);
+    flex-shrink:0;z-index:100;
+    gap:32px;
 }
-#danmaku-layer::before{
-    content:"TUCΛO WALL";position:absolute;
-    top:50%;left:50%;transform:translate(-50%,-50%);
-    font-size:clamp(60px,12vw,120px);font-weight:800;
-    color:rgba(255,255,255,0.012);letter-spacing:8px;
-    pointer-events:none;user-select:none;
+nav .logo{font-size:15px;font-weight:600;letter-spacing:-0.2px;}
+nav .logo span{color:#1ed760;}
+nav .link{font-size:12px;color:rgba(255,255,255,0.5);cursor:pointer;transition:color .2s;letter-spacing:0.3px;}
+nav .link:hover{color:#fff;}
+nav .stat{font-size:12px;color:rgba(255,255,255,0.2);margin-left:auto;}
+nav .stat strong{color:#1ed760;font-weight:600;}
+
+/* ====== 弹幕画布 ====== */
+canvas{
+    flex:1;position:relative;overflow:hidden;
+    background:#000;
 }
+canvas::before{
+    content:'';position:absolute;top:0;left:0;right:0;bottom:0;
+    background:radial-gradient(ellipse at 50% 30%, rgba(30,215,96,0.03) 0%, transparent 60%);
+    pointer-events:none;
+}
+.empty{
+    position:absolute;top:50%;left:50%;transform:translate(-50%,-60%);
+    text-align:center;pointer-events:none;z-index:0;
+}
+.empty .emoji{font-size:64px;margin-bottom:12px;opacity:0.3;}
+.empty h2{font-size:24px;font-weight:600;color:rgba(255,255,255,0.08);letter-spacing:-0.3px;}
 
 /* 弹幕 */
-.danmaku{
-    position:absolute;white-space:nowrap;
-    font-size:15px;font-weight:500;padding:12px 24px;
-    border-radius:100px;pointer-events:auto;cursor:default;
+.barrage{
+    position:absolute;white-space:nowrap;pointer-events:auto;cursor:default;
     animation:fly 12s linear forwards;
-    display:flex;align-items:center;gap:10px;
-    background:rgba(30,30,30,0.7);
-    backdrop-filter:blur(20px);
-    border:1px solid rgba(255,255,255,0.06);
-    box-shadow:0 4px 30px rgba(0,0,0,0.3);
-    transition:transform 0.2s,background 0.2s;
+    display:inline-flex;align-items:center;gap:10px;
+    padding:10px 20px;border-radius:8px;
+    background:rgba(30,30,30,0.6);
+    backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+    border:1px solid rgba(255,255,255,0.04);
+    font-size:14px;
 }
-.danmaku:hover{background:rgba(40,40,40,0.8);transform:scale(1.02);}
 @keyframes fly{
-    0%{transform:translateX(100vw) scale(0.9);opacity:0}
+    0%{transform:translateX(100vw) scale(0.95);opacity:0}
     3%{transform:translateX(calc(100vw - 40px)) scale(1);opacity:1}
     88%{opacity:1}
     100%{transform:translateX(-120%) scale(0.95);opacity:0}
 }
-.danmaku .badge{
-    font-size:11px;padding:4px 12px;border-radius:100px;font-weight:600;letter-spacing:0.3px;
-}
+.barrage .badge{font-size:10px;padding:2px 10px;border-radius:4px;font-weight:600;}
 .b-boss{background:rgba(243,114,127,0.15);color:#f3727f}
 .b-worker{background:rgba(83,157,245,0.15);color:#539df5}
 .b-student{background:rgba(30,215,96,0.15);color:#1ed760}
@@ -63,259 +78,165 @@ body{font-family:'Inter',-apple-system,'PingFang SC','Microsoft YaHei',sans-seri
 .b-doctor{background:rgba(243,114,127,0.12);color:#f3727f}
 .b-seller{background:rgba(83,157,245,0.12);color:#539df5}
 .b-masked{background:rgba(150,150,150,0.12);color:#999}
-.danmaku .nick{font-size:13px;color:rgba(255,255,255,0.4);}
-.danmaku .text{font-weight:400;color:rgba(255,255,255,0.85);}
-.danmaku .like-btn{
-    font-size:13px;color:rgba(255,255,255,0.3);cursor:pointer;
-    margin-left:4px;padding:2px 8px;border-radius:100px;
-    transition:all 0.2s;user-select:none;
-}
-.danmaku .like-btn:hover{color:#1ed760;background:rgba(30,215,96,0.08);}
-.danmaku .like-btn.liked{color:#1ed760;}
+.barrage .nick{font-size:12px;color:rgba(255,255,255,0.3);}
+.barrage .txt{color:rgba(255,255,255,0.85);}
 
-/* 空状态 */
-.empty-state{
-    position:absolute;top:50%;left:50%;transform:translate(-50%,-70%);
-    text-align:center;pointer-events:none;
+/* ====== 底部 ====== */
+footer{
+    padding:24px 32px 32px;
+    background:linear-gradient(0deg, #000 40%, transparent);
+    flex-shrink:0;z-index:10;
+    display:flex;flex-direction:column;align-items:center;gap:12px;
 }
-.empty-state .icon{font-size:72px;margin-bottom:16px;}
-.empty-state h2{font-size:28px;font-weight:600;color:rgba(255,255,255,0.15);margin-bottom:8px;letter-spacing:-0.5px;}
-.empty-state p{font-size:15px;color:rgba(255,255,255,0.08);}
-
-/* 统计 */
-.stats{
-    position:fixed;top:24px;right:32px;z-index:20;
-    font-size:13px;color:rgba(255,255,255,0.15);font-weight:400;
+.tagline{font-size:11px;color:rgba(255,255,255,0.06);letter-spacing:2px;text-transform:uppercase;font-weight:500;}
+.input-group{
+    display:flex;align-items:center;gap:8px;
+    width:100%;max-width:640px;
+    background:rgba(30,30,30,0.5);
+    backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+    border-radius:12px;padding:4px 4px 4px 20px;
+    border:1px solid rgba(255,255,255,0.04);
+    transition:border-color .3s,box-shadow .3s;
 }
-.stats strong{color:#1ed760;font-weight:600;}
-
-/* 底部输入 */
-.bottom-bar{
-    position:fixed;bottom:0;left:0;right:0;z-index:30;
-    background:linear-gradient(0deg, #0a0a0a 60%, transparent);
-    padding:30px 40px 32px;
-    display:flex;flex-direction:column;align-items:center;
-}
-.bottom-bar .tagline{
-    font-size:13px;color:rgba(255,255,255,0.08);
-    margin-bottom:16px;letter-spacing:2px;text-transform:uppercase;
-    font-weight:500;
-}
-.bottom-bar .input-group{
-    display:flex;align-items:center;gap:12px;
-    width:100%;max-width:700px;
-    background:rgba(30,30,30,0.6);
-    backdrop-filter:blur(20px);
-    border:1px solid rgba(255,255,255,0.06);
-    border-radius:100px;
-    padding:6px 6px 6px 24px;
-    transition:border-color 0.3s,box-shadow 0.3s;
-}
-.bottom-bar .input-group:focus-within{
-    border-color:rgba(30,215,96,0.2);
-    box-shadow:0 0 0 4px rgba(30,215,96,0.04);
-}
-.bottom-bar .input-group input{
+.input-group:focus-within{border-color:rgba(30,215,96,0.15);box-shadow:0 0 0 4px rgba(30,215,96,0.03);}
+.input-group input{
     flex:1;background:transparent;border:none;
     padding:14px 8px;color:#fff;font-size:16px;
-    font-family:'Inter',sans-serif;outline:none;
+    font-family:inherit;outline:none;
 }
-.bottom-bar .input-group input::placeholder{color:rgba(255,255,255,0.15);}
-.bottom-bar .input-group .send-btn{
+.input-group input::placeholder{color:rgba(255,255,255,0.12);}
+.input-group .btn{
     background:#1ed760;color:#000;border:none;
-    border-radius:100px;padding:10px 32px;
-    font-size:14px;font-weight:600;font-family:'Inter',sans-serif;
-    cursor:pointer;transition:all 0.2s;
-    white-space:nowrap;letter-spacing:0.5px;
+    border-radius:8px;padding:10px 28px;
+    font-size:14px;font-weight:600;font-family:inherit;
+    cursor:pointer;transition:all .2s;white-space:nowrap;
 }
-.bottom-bar .input-group .send-btn:hover{background:#2ae66d;transform:scale(1.02);}
-.bottom-bar .input-group .send-btn:active{transform:scale(0.97);}
-.bottom-bar .input-group .send-btn:disabled{opacity:0.3;cursor:not-allowed;transform:none;}
+.input-group .btn:hover{background:#2ae66d;transform:scale(1.02);}
+.input-group .btn:active{transform:scale(0.97);}
+.input-group .btn:disabled{opacity:0.2;cursor:not-allowed;transform:none;}
 
-.bottom-bar .options{
-    display:flex;align-items:center;gap:12px;margin-top:14px;
-    width:100%;max-width:700px;
+.options{
+    display:flex;align-items:center;gap:10px;
+    width:100%;max-width:640px;font-size:12px;
 }
-.bottom-bar .options select,.bottom-bar .options input{
-    background:rgba(30,30,30,0.4);
-    border:1px solid rgba(255,255,255,0.04);
-    border-radius:100px;padding:6px 28px 6px 14px;
-    color:rgba(255,255,255,0.5);font-size:12px;
-    font-family:'Inter',sans-serif;outline:none;cursor:pointer;
+.options select,.options input{
+    background:rgba(30,30,30,0.3);
+    border:1px solid rgba(255,255,255,0.03);
+    border-radius:6px;padding:5px 24px 5px 10px;
+    color:rgba(255,255,255,0.4);font-size:12px;
+    font-family:inherit;outline:none;cursor:pointer;
     appearance:none;-webkit-appearance:none;
-    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3E%3Cpath fill='rgba(255,255,255,0.2)' d='M4 6L1 2h6z'/%3E%3C/svg%3E");
-    background-repeat:no-repeat;background-position:right 10px center;
-    transition:border-color 0.2s;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3E%3Cpath fill='rgba(255,255,255,0.15)' d='M4 6L1 2h6z'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 8px center;
 }
-.bottom-bar .options select:focus,.bottom-bar .options input:focus{
-    border-color:rgba(30,215,96,0.15);
-}
-.bottom-bar .options .name-input{
-    width:100px;cursor:text;background-image:none;padding:6px 14px;
-}
-.bottom-bar .options .char-count{
-    margin-left:auto;font-size:11px;color:rgba(255,255,255,0.12);
-}
+.options select:focus,.options input:focus{border-color:rgba(30,215,96,0.1);}
+.options .ni{width:100px;cursor:text;background-image:none;padding:5px 10px;}
+.options .cc{margin-left:auto;color:rgba(255,255,255,0.08);font-size:11px;}
 
-/* Toast */
 .toast{
-    position:fixed;bottom:140px;left:50%;transform:translateX(-50%);
+    position:fixed;bottom:130px;left:50%;transform:translateX(-50%);
     background:rgba(30,30,30,0.9);color:rgba(255,255,255,0.7);
-    padding:12px 28px;border-radius:100px;font-size:14px;font-weight:500;
+    padding:12px 28px;border-radius:12px;font-size:14px;
     display:none;z-index:999;
-    backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.06);
+    backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+    border:1px solid rgba(255,255,255,0.04);
     box-shadow:0 8px 30px rgba(0,0,0,0.5);
 }
 
-/* 响应 */
 @media(max-width:600px){
-    .bottom-bar{padding:20px 16px 24px;}
-    .bottom-bar .input-group{padding:4px 4px 4px 16px;}
-    .bottom-bar .input-group input{font-size:15px;padding:12px 6px;}
-    .bottom-bar .input-group .send-btn{padding:8px 20px;font-size:13px;}
-    .bottom-bar .options{flex-wrap:wrap;gap:8px;}
-    .bottom-bar .options .name-input{width:80px;}
-    .stats{top:16px;right:16px;font-size:12px;}
-    .danmaku{font-size:14px;padding:10px 18px;}
+    footer{padding:16px 16px 24px;}
+    nav{gap:16px;}
+    nav .stat{display:none;}
+    .input-group{padding:3px 3px 3px 14px;}
+    .input-group input{font-size:15px;padding:12px 6px;}
+    .input-group .btn{padding:8px 20px;font-size:13px;}
+    .options{flex-wrap:wrap;gap:6px;}
+    .options .ni{width:70px;}
+    .barrage{padding:8px 14px;font-size:13px;}
 }
 </style>
 </head>
 <body>
 
-<div id="danmaku-layer">
-    <div class="empty-state" id="emptyState">
-        <div class="icon">💬</div>
+<nav>
+    <div class="logo">💬 <span>吐槽墙</span></div>
+    <div class="link" onclick="switchTab('barrage')">✨ 弹幕</div>
+    <div class="link" onclick="switchTab('hot')">🔥 热榜</div>
+    <div class="stat"><strong id="sC">0</strong> 条发声</div>
+</nav>
+
+<canvas id="stage">
+    <div class="empty" id="emptyS">
+        <div class="emoji">💬</div>
         <h2>还没有吐槽</h2>
-        <p>写下你想说的</p>
     </div>
-</div>
+</canvas>
 
-<div class="stats"><strong id="statCount">0</strong> 条发声</div>
-
-<div class="bottom-bar">
-    <div class="tagline">✦ 匿名发声 · 人人可见 ✦</div>
+<footer>
+    <div class="tagline">匿名发声 · 人人可见</div>
     <div class="input-group">
-        <input type="text" id="contentInput" placeholder="今天想吐槽什么？" maxlength="200" autofocus>
-        <button class="send-btn" id="sendBtn" onclick="submitPost()">发送</button>
+        <input type="text" id="inputT" placeholder="今天想吐槽什么？" maxlength="200" autofocus>
+        <button class="btn" id="sendB" onclick="post()">发送</button>
     </div>
     <div class="options">
-        <select id="categorySelect">
-            <option>🏠 生活</option><option>💼 工作</option>
-            <option>❤️ 情感</option><option>😂 搞笑</option><option>📌 其他</option>
-        </select>
-        <select id="jobSelect">
-            <option>💼 打工人</option><option>👔 老板</option>
-            <option>🎒 学生</option><option>📚 老师</option>
-            <option>💻 程序员</option><option>🎨 设计师</option>
-            <option>🏥 医生</option><option>📊 销售</option><option>🥷 神秘人</option>
-        </select>
-        <input class="name-input" type="text" id="nameInput" placeholder="匿名" maxlength="10">
-        <span class="char-count"><span id="charCount">0</span>/200</span>
+        <select id="catS"><option>🏠 生活</option><option>💼 工作</option><option>❤️ 情感</option><option>😂 搞笑</option><option>📌 其他</option></select>
+        <select id="jobS"><option>💼 打工人</option><option>👔 老板</option><option>🎒 学生</option><option>📚 老师</option><option>💻 程序员</option><option>🎨 设计师</option><option>🏥 医生</option><option>📊 销售</option><option>🥷 神秘人</option></select>
+        <input class="ni" id="nameI" placeholder="匿名" maxlength="10">
+        <span class="cc"><span id="cC">0</span>/200</span>
     </div>
-</div>
+</footer>
 
 <div class="toast" id="toast"></div>
 
 <script>
-const firebaseConfig = {
-    apiKey:"AIzaSyDA-zk7rLU7o8litC1BlURyocYprLqAb80",
-    authDomain:"planning-with-ai-e9272.firebaseapp.com",
-    databaseURL:"https://venting-and-complaining-default-rtdb.firebaseio.com",
-    projectId:"planning-with-ai-e9272",
-    storageBucket:"planning-with-ai-e9272.firebasestorage.app",
-    messagingSenderId:"207850905652",
-    appId:"1:207850905652:web:f158f5b24b98ebad93aa61"
-};
-firebase.initializeApp(firebaseConfig);
-const db=firebase.database();
-const ref=db.ref('posts');
+const FB={apiKey:"AIzaSyDA-zk7rLU7o8litC1BlURyocYprLqAb80",authDomain:"planning-with-ai-e9272.firebaseapp.com",databaseURL:"https://venting-and-complaining-default-rtdb.firebaseio.com",projectId:"planning-with-ai-e9272",storageBucket:"planning-with-ai-e9272.firebasestorage.app",messagingSenderId:"207850905652",appId:"1:207850905652:web:f158f5b24b98ebad93aa61"};
+firebase.initializeApp(FB);const db=firebase.database();const ref=db.ref('posts');
+const stage=document.getElementById('stage');const sC=document.getElementById('sC');const emptyS=document.getElementById('emptyS');
+const JT={'打工人':'b-worker','老板':'b-boss','学生':'b-student','老师':'b-teacher','程序员':'b-coder','设计师':'b-designer','医生':'b-doctor','销售':'b-seller','神秘人':'b-masked'};
+const JE={'打工人':'💼','老板':'👔','学生':'🎒','老师':'📚','程序员':'💻','设计师':'🎨','医生':'🏥','销售':'📊','神秘人':'🥷'};
+let total=0,seen={};
 
-const layer=document.getElementById('danmaku-layer');
-const statEl=document.getElementById('statCount');
-const emptyEl=document.getElementById('emptyState');
-
-const jobTags={'打工人':'b-worker','老板':'b-boss','学生':'b-student','老师':'b-teacher','程序员':'b-coder','设计师':'b-designer','医生':'b-doctor','销售':'b-seller','神秘人':'b-masked'};
-const jobEmoji={'打工人':'💼','老板':'👔','学生':'🎒','老师':'📚','程序员':'💻','设计师':'🎨','医生':'🏥','销售':'📊','神秘人':'🥷'};
-
-let total=0, seen={};
-
-ref.once('value', snap=>{
-    const data=snap.val();
-    if(data){
-        emptyEl.style.display='none';
-        const entries=Object.entries(data);
-        total=entries.length;
-        statEl.textContent=total;
-        entries.forEach(([k,v],i)=>{
-            seen[k]=1;
-            if(v&&v.content) setTimeout(()=>launch(v),i*60);
-        });
-    }
+ref.once('value',snap=>{
+    const d=snap.val();if(!d)return;
+    emptyS.style.display='none';
+    const es=Object.entries(d);total=es.length;sC.textContent=total;
+    es.forEach(([k,v],i)=>{seen[k]=1;if(v&&v.content)setTimeout(()=>drop(v),i*50);});
 });
 
-ref.limitToLast(1).on('child_added', snap=>{
-    const d=snap.val();
-    if(!d||!d.content||seen[snap.key]) return;
-    seen[snap.key]=1;
-    emptyEl.style.display='none';
-    total++;
-    statEl.textContent=total;
-    launch(d);
+ref.limitToLast(1).on('child_added',snap=>{
+    const d=snap.val();if(!d||!d.content||seen[snap.key])return;
+    seen[snap.key]=1;emptyS.style.display='none';total++;sC.textContent=total;drop(d);
 });
 
-function launch(d){
-    if(!d||!d.content) return;
-    const lines=6;
-    const lh=window.innerHeight/lines;
+function drop(d){
+    if(!d||!d.content)return;
+    const lines=5;const lh=window.innerHeight/lines;
     const line=Math.floor(Math.random()*lines);
-    const top=20+line*lh;
-    const dur=10+Math.random()*4;
-
-    const job=d.job||'神秘人';
-    const tag=jobTags[job]||'b-masked';
-    const emoji=jobEmoji[job]||'🥷';
-
-    const el=document.createElement('div');
-    el.className='danmaku';
-    el.innerHTML=`
-        <span class="badge ${tag}">${emoji} ${d.job||'神秘人'}</span>
-        <span class="nick">${esc(d.nickname||'匿名')}</span>
-        <span class="text">${esc(d.content)}</span>
-        <span class="like-btn" onclick="toggleLike(this,${d.likes||0})">👍 <span class="like-count">${d.likes||0}</span></span>
-    `;
-    el.style.top=top+'px';
-    el.style.animationDuration=dur+'s';
-    layer.appendChild(el);
-    setTimeout(()=>el.remove(),(dur+2)*1000);
+    const top=40+line*lh;const dur=10+Math.random()*4;
+    const job=d.job||'神秘人';const tag=JT[job]||'b-masked';const em=JE[job]||'🥷';
+    const el=document.createElement('div');el.className='barrage';
+    el.innerHTML=`<span class="badge ${tag}">${em} ${job}</span><span class="nick">${esc(d.nickname||'匿名')}</span><span class="txt">${esc(d.content)}</span>`;
+    el.style.top=top+'px';el.style.animationDuration=dur+'s';
+    stage.appendChild(el);setTimeout(()=>el.remove(),(dur+2)*1000);
 }
 
-function toggleLike(el,cur){
-    el.classList.toggle('liked');
-    const count=el.querySelector('.like-count');
-    count.textContent=el.classList.contains('liked')?cur+1:cur;
-}
-
-async function submitPost(){
-    const content=document.getElementById('contentInput').value.trim();
-    const name=document.getElementById('nameInput').value.trim()||'匿名';
-    const job=document.getElementById('jobSelect').value.replace(/^.\s/,'');
-    const category=document.getElementById('categorySelect').value.replace(/^.\s/,'');
-    if(!content){toast('写点内容再发送');return;}
-    const btn=document.getElementById('sendBtn');
-    btn.disabled=true;btn.textContent='发送中';
-    try{
-        await ref.push({nickname:name,content,job,category,likes:0,createdAt:firebase.database.ServerValue.TIMESTAMP});
-        document.getElementById('contentInput').value='';
-        document.getElementById('charCount').textContent='0';
-        toast('已发声 ✦');
-    }catch(e){toast('发送失败');}
+function switchTab(t){toast({barrage:'✨ 弹幕',hot:'🔥 热榜'}[t]);}
+function post(){
+    const c=document.getElementById('inputT').value.trim();
+    const n=document.getElementById('nameI').value.trim()||'匿名';
+    const j=document.getElementById('jobS').value.replace(/^.\s/,'');
+    const ca=document.getElementById('catS').value.replace(/^.\s/,'');
+    if(!c){toast('写点内容');return;}
+    const btn=document.getElementById('sendB');btn.disabled=true;btn.textContent='发送中';
+    ref.push({nickname:n,content:c,job:j,category:ca,likes:0,createdAt:firebase.database.ServerValue.TIMESTAMP})
+    .then(()=>{document.getElementById('inputT').value='';document.getElementById('cC').textContent='0';toast('已发送 ✦');})
+    .catch(()=>toast('失败'));
     btn.disabled=false;btn.textContent='发送';
 }
-
 function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML;}
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.style.display='block';setTimeout(()=>t.style.display='none',2000);}
-document.getElementById('contentInput').addEventListener('input',function(){document.getElementById('charCount').textContent=this.value.length;});
-document.getElementById('contentInput').addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();submitPost();}});
+document.getElementById('inputT').addEventListener('input',function(){document.getElementById('cC').textContent=this.value.length;});
+document.getElementById('inputT').addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();post();}});
 </script>
 </body>
 </html>
