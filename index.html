@@ -22,38 +22,78 @@
             flex: 1;
             position: relative;
             overflow: hidden;
-            background: radial-gradient(ellipse at center, #1a1a2e 0%, #0a0a0a 70%);
+            background:
+                radial-gradient(ellipse at 20% 50%, rgba(255,107,107,0.08) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 50%, rgba(77,166,255,0.08) 0%, transparent 60%),
+                radial-gradient(ellipse at 50% 30%, rgba(255,217,61,0.05) 0%, transparent 50%),
+                linear-gradient(180deg, #0a0a0a 0%, #1a1a2e 50%, #0a0a0a 100%);
         }
 
+        /* 背景装饰文字 */
+        #danmaku-container::before {
+            content: "🗣️ 全网吐槽墙";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 60px;
+            font-weight: 900;
+            color: rgba(255,255,255,0.03);
+            text-shadow: 0 0 40px rgba(255,107,107,0.1);
+            white-space: nowrap;
+            pointer-events: none;
+            letter-spacing: 10px;
+        }
+
+        /* 背景粒子装饰 */
+        #danmaku-container::after {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image:
+                radial-gradient(2px 2px at 10% 20%, rgba(255,255,255,0.1), transparent),
+                radial-gradient(2px 2px at 30% 60%, rgba(255,255,255,0.08), transparent),
+                radial-gradient(2px 2px at 50% 10%, rgba(255,255,255,0.1), transparent),
+                radial-gradient(2px 2px at 70% 80%, rgba(255,255,255,0.08), transparent),
+                radial-gradient(2px 2px at 90% 40%, rgba(255,255,255,0.1), transparent),
+                radial-gradient(3px 3px at 15% 80%, rgba(255,255,255,0.06), transparent),
+                radial-gradient(3px 3px at 65% 30%, rgba(255,255,255,0.06), transparent),
+                radial-gradient(3px 3px at 85% 70%, rgba(255,255,255,0.06), transparent);
+            pointer-events: none;
+        }
+
+        /* 弹幕 */
         .danmaku {
             position: absolute;
             white-space: nowrap;
-            font-size: 18px;
+            font-size: 20px;
             font-weight: bold;
-            padding: 6px 14px;
-            border-radius: 20px;
+            padding: 8px 18px;
+            border-radius: 25px;
             pointer-events: none;
-            animation: fly 8s linear forwards;
-            text-shadow: 0 0 10px rgba(0,0,0,0.8);
+            animation: fly 9s linear forwards;
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
         }
 
         @keyframes fly {
-            0% { transform: translateX(100vw); opacity: 1; }
-            90% { opacity: 1; }
-            100% { transform: translateX(-100%); opacity: 0; }
+            0% { transform: translateX(100vw) scale(0.8); opacity: 0; }
+            5% { transform: translateX(calc(100vw - 20px)) scale(1); opacity: 1; }
+            85% { opacity: 1; }
+            100% { transform: translateX(-120%) scale(0.9); opacity: 0; }
         }
 
         .danmaku .badge {
-            font-size: 13px;
-            padding: 2px 10px;
+            font-size: 12px;
+            padding: 3px 10px;
             border-radius: 12px;
-            font-weight: normal;
+            font-weight: 600;
+            letter-spacing: 0.5px;
         }
-
-        /* 不同职业颜色 */
         .badge-boss { background: #e74c3c; color: white; }
         .badge-worker { background: #3498db; color: white; }
         .badge-student { background: #2ecc71; color: white; }
@@ -64,63 +104,86 @@
         .badge-seller { background: #f39c12; color: white; }
         .badge-masked { background: #7f8c8d; color: white; }
 
-        .danmaku .nick {
-            font-size: 12px;
-            opacity: 0.7;
-            margin-right: 2px;
-        }
+        .danmaku .nick { font-size: 13px; opacity: 0.6; }
 
-        /* 不同颜色弹幕背景 */
-        .danmaku:nth-child(6n+1) { background: rgba(255,107,107,0.25); color: #ff6b6b; }
-        .danmaku:nth-child(6n+2) { background: rgba(255,217,61,0.25); color: #ffd93d; }
-        .danmaku:nth-child(6n+3) { background: rgba(107,203,119,0.25); color: #6bcb77; }
-        .danmaku:nth-child(6n+4) { background: rgba(77,166,255,0.25); color: #4da6ff; }
-        .danmaku:nth-child(6n+5) { background: rgba(255,128,255,0.25); color: #ff80ff; }
-        .danmaku:nth-child(6n+0) { background: rgba(255,200,100,0.25); color: #ffc864; }
+        .danmaku:nth-child(8n+1) { background: rgba(255,107,107,0.2); color: #ff6b6b; border-color: rgba(255,107,107,0.3); }
+        .danmaku:nth-child(8n+2) { background: rgba(255,217,61,0.2); color: #ffd93d; border-color: rgba(255,217,61,0.3); }
+        .danmaku:nth-child(8n+3) { background: rgba(107,203,119,0.2); color: #6bcb77; border-color: rgba(107,203,119,0.3); }
+        .danmaku:nth-child(8n+4) { background: rgba(77,166,255,0.2); color: #4da6ff; border-color: rgba(77,166,255,0.3); }
+        .danmaku:nth-child(8n+5) { background: rgba(255,128,255,0.2); color: #ff80ff; border-color: rgba(255,128,255,0.3); }
+        .danmaku:nth-child(8n+6) { background: rgba(255,200,100,0.2); color: #ffc864; border-color: rgba(255,200,100,0.3); }
+        .danmaku:nth-child(8n+7) { background: rgba(100,255,218,0.2); color: #64ffda; border-color: rgba(100,255,218,0.3); }
+        .danmaku:nth-child(8n+0) { background: rgba(179,136,255,0.2); color: #b388ff; border-color: rgba(179,136,255,0.3); }
 
+        /* 输入区 */
         .input-area {
-            background: linear-gradient(0deg, #1a1a1a, #0f0f0f);
-            padding: 16px 20px 24px;
+            background: linear-gradient(0deg, #121212 0%, rgba(15,15,15,0.95) 100%);
+            padding: 18px 20px 24px;
             display: flex;
             flex-direction: column;
             align-items: center;
             gap: 10px;
-            border-top: 1px solid #222;
+            border-top: 1px solid rgba(255,255,255,0.06);
+            backdrop-filter: blur(20px);
         }
+
+        .input-area .title-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: #555;
+            margin-bottom: 2px;
+        }
+        .input-area .title-bar .dot {
+            width: 6px; height: 6px; border-radius: 50%;
+            display: inline-block;
+        }
+        .dot-red { background: #ff6b6b; }
+        .dot-yellow { background: #ffd93d; }
+        .dot-green { background: #6bcb77; }
 
         .input-row {
             display: flex;
             align-items: center;
             gap: 10px;
             width: 100%;
-            max-width: 700px;
+            max-width: 720px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 30px;
+            padding: 4px 4px 4px 20px;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        .input-row:focus-within {
+            border-color: rgba(255,107,107,0.4);
+            box-shadow: 0 0 20px rgba(255,107,107,0.1);
         }
 
         .input-row input[type="text"] {
             flex: 1;
-            background: #222;
-            border: 1px solid #444;
-            border-radius: 25px;
-            padding: 12px 20px;
+            background: transparent;
+            border: none;
+            padding: 12px 8px;
             color: #e0e0e0;
             font-size: 16px;
             outline: none;
-            transition: border-color 0.2s;
         }
-        .input-row input[type="text"]:focus { border-color: #ff6b6b; }
+        .input-row input[type="text"]::placeholder { color: #555; }
 
         .input-row .btn {
             background: linear-gradient(135deg, #ff6b6b, #ee5a24);
             color: white;
             border: none;
             border-radius: 25px;
-            padding: 12px 28px;
-            font-size: 16px;
+            padding: 10px 24px;
+            font-size: 15px;
             cursor: pointer;
-            transition: transform 0.2s;
+            transition: all 0.2s;
             white-space: nowrap;
+            font-weight: 600;
         }
-        .input-row .btn:hover { transform: scale(1.05); }
+        .input-row .btn:hover { transform: scale(1.05); filter: brightness(1.1); }
         .input-row .btn:active { transform: scale(0.95); }
         .input-row .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
@@ -129,17 +192,18 @@
             align-items: center;
             gap: 10px;
             width: 100%;
-            max-width: 700px;
+            max-width: 720px;
             font-size: 13px;
             color: #666;
+            padding: 0 8px;
         }
 
         .job-select {
-            background: #222;
-            border: 1px solid #444;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.08);
             border-radius: 15px;
-            padding: 6px 14px;
-            color: #e0e0e0;
+            padding: 5px 30px 5px 12px;
+            color: #ccc;
             font-size: 13px;
             outline: none;
             cursor: pointer;
@@ -148,48 +212,75 @@
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
             background-repeat: no-repeat;
             background-position: right 10px center;
-            padding-right: 30px;
-            min-width: 140px;
+            transition: border-color 0.2s;
         }
-        .job-select:focus { border-color: #888; }
+        .job-select:focus { border-color: rgba(255,107,107,0.4); }
 
         .input-meta input {
-            background: #222;
-            border: 1px solid #444;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.08);
             border-radius: 15px;
-            padding: 6px 14px;
-            color: #e0e0e0;
+            padding: 5px 12px;
+            color: #ccc;
             font-size: 13px;
-            width: 120px;
+            width: 100px;
             outline: none;
+            transition: border-color 0.2s;
         }
-        .input-meta input:focus { border-color: #888; }
-        .input-meta .char-count { margin-left: auto; }
+        .input-meta input:focus { border-color: rgba(255,107,107,0.4); }
+        .input-meta .char-count { margin-left: auto; color: #555; font-size: 12px; }
 
         .toast {
-            position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
-            background: rgba(0,0,0,0.8); color: #e0e0e0;
-            padding: 10px 24px; border-radius: 20px;
-            font-size: 14px; display: none; z-index: 999;
-            backdrop-filter: blur(10px);
+            position: fixed;
+            bottom: 120px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.85);
+            color: #e0e0e0;
+            padding: 10px 28px;
+            border-radius: 25px;
+            font-size: 14px;
+            display: none;
+            z-index: 999;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.5);
         }
 
         .hint {
-            font-size: 12px;
-            color: #444;
+            font-size: 11px;
+            color: #333;
             text-align: center;
-            margin-top: 2px;
+        }
+
+        /* 弹幕数量统计 */
+        .stats {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 12px;
+            color: rgba(255,255,255,0.15);
+            pointer-events: none;
+            z-index: 1;
         }
     </style>
 </head>
 <body>
 
-    <div id="danmaku-container"></div>
+    <div id="danmaku-container">
+        <div class="stats" id="stats">0 条吐槽</div>
+    </div>
 
     <div class="input-area">
+        <div class="title-bar">
+            <span class="dot dot-red"></span>
+            <span class="dot dot-yellow"></span>
+            <span class="dot dot-green"></span>
+            <span style="margin-left:6px;color:#444;">吐个槽吧</span>
+        </div>
         <div class="input-row">
-            <input type="text" id="content" placeholder="写你想吐槽的..." maxlength="100" autofocus>
-            <button class="btn" id="submitBtn" onclick="submitPost()">发射弹幕</button>
+            <input type="text" id="content" placeholder="今天想吐槽什么？" maxlength="120" autofocus>
+            <button class="btn" id="submitBtn" onclick="submitPost()">发射 🚀</button>
         </div>
         <div class="input-meta">
             <select class="job-select" id="jobSelect">
@@ -204,9 +295,9 @@
                 <option value="神秘人">🥷 神秘人</option>
             </select>
             <input type="text" id="nickname" placeholder="匿名" maxlength="10">
-            <span class="char-count"><span id="counter">0</span>/100</span>
+            <span class="char-count"><span id="counter">0</span>/120</span>
         </div>
-        <div class="hint">按 Enter 发射 · 选择职业身份 · 人人可见</div>
+        <div class="hint">⏎ 回车发送 · 选择身份 · 所有人可见</div>
     </div>
 
     <div class="toast" id="toast"></div>
@@ -226,80 +317,71 @@
         const db = firebase.database();
         const postsRef = db.ref('posts');
         const container = document.getElementById('danmaku-container');
+        const statsEl = document.getElementById('stats');
+        let totalPosts = 0;
 
         const jobEmoji = {
-            '打工人': '💼', '老板': '👔', '学生': '🎒', '老师': '📚',
-            '程序员': '💻', '设计师': '🎨', '医生': '🏥', '销售': '📊', '神秘人': '🥷'
+            '打工人':'💼','老板':'👔','学生':'🎒','老师':'📚',
+            '程序员':'💻','设计师':'🎨','医生':'🏥','销售':'📊','神秘人':'🥷'
+        };
+        const jobBadge = {
+            '打工人':'badge-worker','老板':'badge-boss','学生':'badge-student',
+            '老师':'badge-teacher','程序员':'badge-coder','设计师':'badge-designer',
+            '医生':'badge-doctor','销售':'badge-seller','神秘人':'badge-masked'
         };
 
-        const jobBadgeClass = {
-            '打工人': 'badge-worker', '老板': 'badge-boss', '学生': 'badge-student',
-            '老师': 'badge-teacher', '程序员': 'badge-coder', '设计师': 'badge-designer',
-            '医生': 'badge-doctor', '销售': 'badge-seller', '神秘人': 'badge-masked'
-        };
+        postsRef.on('child_added', (snap) => {
+            totalPosts++;
+            statsEl.textContent = totalPosts + ' 条吐槽';
 
-        postsRef.orderByChild('createdAt').limitToLast(1).on('child_added', (snap) => {
             const data = snap.val();
             if (!data || !data.content) return;
 
-            const lines = 6;
-            const lineHeight = window.innerHeight / lines;
+            const lines = 7;
+            const lh = window.innerHeight / lines;
             const line = Math.floor(Math.random() * lines);
-            const top = line * lineHeight + lineHeight * 0.2;
-            const duration = 6 + Math.random() * 4;
+            const top = line * lh + lh * 0.1;
+            const dur = 7 + Math.random() * 5;
 
             const job = data.job || '神秘人';
-            const badgeClass = jobBadgeClass[job] || 'badge-masked';
             const emoji = jobEmoji[job] || '🥷';
+            const bc = jobBadge[job] || 'badge-masked';
 
             const el = document.createElement('div');
             el.className = 'danmaku';
             el.innerHTML = `
-                <span class="badge ${badgeClass}">${emoji} ${job}</span>
-                <span class="nick">${escapeHtml(data.nickname || '匿名')}</span>
-                ${escapeHtml(data.content)}
+                <span class="badge ${bc}">${emoji} ${job}</span>
+                <span class="nick">${esc(data.nickname||'匿名')}</span>
+                ${esc(data.content)}
             `;
             el.style.top = top + 'px';
-            el.style.animationDuration = duration + 's';
+            el.style.animationDuration = dur + 's';
             container.appendChild(el);
-            setTimeout(() => el.remove(), (duration + 1) * 1000);
+            setTimeout(() => el.remove(), (dur + 2) * 1000);
         });
 
         async function submitPost() {
-            const content = document.getElementById('content').value.trim();
-            const nickname = document.getElementById('nickname').value.trim() || '匿名';
-            const job = document.getElementById('jobSelect').value;
-
-            if (!content) { showToast('写点内容再发射！'); return; }
+            const c = document.getElementById('content').value.trim();
+            const n = document.getElementById('nickname').value.trim() || '匿名';
+            const j = document.getElementById('jobSelect').value;
+            if (!c) { toast('写点内容再发射！'); return; }
 
             const btn = document.getElementById('submitBtn');
-            btn.disabled = true;
-            btn.textContent = '发射中...';
-
+            btn.disabled = true; btn.textContent = '发射中...';
             try {
-                await postsRef.push({
-                    nickname, content, job,
-                    createdAt: firebase.database.ServerValue.TIMESTAMP
-                });
+                await postsRef.push({ nickname:n, content:c, job:j, createdAt: firebase.database.ServerValue.TIMESTAMP });
                 document.getElementById('content').value = '';
                 document.getElementById('counter').textContent = '0';
-                showToast('弹幕已发射！');
-            } catch (e) { showToast('发射失败'); }
-
-            btn.disabled = false;
-            btn.textContent = '发射弹幕';
+                toast('弹幕已发射！');
+            } catch(e) { toast('发射失败'); }
+            btn.disabled = false; btn.textContent = '发射 🚀';
         }
 
-        function escapeHtml(t) {
-            const d = document.createElement('div');
-            d.textContent = t;
-            return d.innerHTML;
-        }
-
-        function showToast(msg) {
+        function esc(t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+        function toast(msg) {
             const t = document.getElementById('toast');
             t.textContent = msg; t.style.display = 'block';
-            setTimeout(() => { t.style.display = 'none'; }, 2000);
+            setTimeout(() => t.style.display = 'none', 2000);
         }
 
         document.getElementById('content').addEventListener('input', function() {
