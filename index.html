@@ -267,7 +267,7 @@
             <div class="item" data-cat="搞笑" onclick="filter('搞笑')"><span class="icon">😂</span>搞笑 <span class="count" id="c搞笑">0</span></div>
             <div class="item" data-cat="其他" onclick="filter('其他')"><span class="icon">📌</span>其他 <span class="count" id="c其他">0</span></div>
             <div class="hr"></div>
-            <div class="sec-title">🔥 热榜 Top 10</div>
+            <div class="sec-title" id="hotTitle">🔥 热榜 Top 10</div>
             <div id="hotList"><div style="color:var(--text3);font-size:11px;">加载中...</div></div>
         </div>
 
@@ -386,18 +386,22 @@
             document.getElementById('subBtn').textContent=l.send;
             document.querySelector('.hint').textContent=l.hint;
             document.querySelector('.sec-title').textContent=l.cat;
-            // 侧栏分类 - 只改文字部分
+            // 侧栏分类 - 保留 data-cat 和 onclick
             const catItems=document.querySelectorAll('.sidebar .item');
+            const catKeys=['all','生活','工作','情感','搞笑','其他'];
             const catLabels=[l.all,l.life,l.work,l.love,l.funny,l.other];
             catItems.forEach((el,i)=>{
                 if(i<catLabels.length){
                     const ic=el.querySelector('.ic').textContent;
                     const cnt=el.querySelector('.cnt');
+                    const cat=el.dataset.cat;
                     el.innerHTML='<span class="ic">'+ic+'</span>'+catLabels[i];
                     if(cnt) el.appendChild(cnt);
+                    el.dataset.cat=cat||catKeys[i];
+                    if(el.dataset.cat===curFilter) el.classList.add('active');
                 }
             });
-            document.querySelectorAll('.sec-title')[1].textContent=l.hotTitle;
+            document.getElementById('hotTitle').textContent=l.hotTitle;
             document.getElementById('langSelect').value=currentLang;
             // 热点也重新生成
             shuffleHot();
@@ -560,7 +564,7 @@
         document.getElementById('content').addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();submit();}});
 
         // ====== 热点话题 ======
-        const hotTopics=[
+        const hotTopicsZh=[
             {text:"周一不想上班",cat:"工作",job:"打工人"},{text:"工资什么时候涨",cat:"工作",job:"打工人"},{text:"老板又在画饼了",cat:"工作",job:"老板"},
             {text:"今晚吃什么",cat:"生活",job:"神秘人"},{text:"早睡早起做不到",cat:"生活",job:"学生"},{text:"为什么总是我买单",cat:"情感",job:"打工人"},
             {text:"前任结婚了我还单身",cat:"情感",job:"神秘人"},{text:"地铁上有人外放",cat:"生活",job:"打工人"},{text:"代码又报错了",cat:"工作",job:"程序员"},
@@ -568,8 +572,33 @@
             {text:"今天不加班",cat:"工作",job:"打工人"},{text:"甲方又要改需求",cat:"工作",job:"设计师"},{text:"人生好难",cat:"情感",job:"神秘人"},
             {text:"周五了嗨起来",cat:"生活",job:"打工人"},{text:"双十一什么都没买",cat:"生活",job:"打工人"},{text:"又在摸鱼",cat:"工作",job:"程序员"}
         ];
+        const hotTopicsEn=[
+            {text:"Monday blues",cat:"work",job:"打工人"},{text:"When will salary rise",cat:"work",job:"打工人"},{text:"Boss is lying again",cat:"work",job:"老板"},
+            {text:"What's for dinner",cat:"life",job:"神秘人"},{text:"Can't sleep early",cat:"life",job:"学生"},{text:"Always me paying",cat:"love",job:"打工人"},
+            {text:"Ex got married",cat:"love",job:"神秘人"},{text:"Phone speaker on subway",cat:"life",job:"打工人"},{text:"Code broken again",cat:"work",job:"程序员"},
+            {text:"Design back to v1",cat:"work",job:"设计师"},{text:"Failed the exam",cat:"love",job:"学生"},{text:"Called out by teacher",cat:"life",job:"学生"},
+            {text:"No overtime today",cat:"work",job:"打工人"},{text:"Client changed reqs",cat:"work",job:"设计师"},{text:"Life is hard",cat:"love",job:"神秘人"},
+            {text:"Friday let's go",cat:"life",job:"打工人"},{text:"Bought nothing on sale",cat:"life",job:"打工人"},{text:"Slacking off again",cat:"work",job:"程序员"}
+        ];
+        const hotTopicsJa=[
+            {text:"月曜日行きたくない",cat:"work",job:"打工人"},{text:"給料上がらない",cat:"work",job:"打工人"},{text:"上司が嘘つき",cat:"work",job:"老板"},
+            {text:"今夜何食べる",cat:"life",job:"神秘人"},{text:"早起きできない",cat:"life",job:"学生"},{text:"いつも私が払う",cat:"love",job:"打工人"},
+            {text:"元彼が結婚した",cat:"love",job:"神秘人"},{text:"電車で音漏れ",cat:"life",job:"打工人"},{text:"コードが動かない",cat:"work",job:"程序员"},
+            {text:"デザイン戻して",cat:"work",job:"设计师"},{text:"試験落ちた",cat:"love",job:"学生"},{text:"先生に叱られた",cat:"life",job:"学生"},
+            {text:"今日は残業なし",cat:"work",job:"打工人"},{text:"客が要件変更",cat:"work",job:"设计师"},{text:"人生つらい",cat:"love",job:"神秘人"},
+            {text:"金曜日だ!",cat:"life",job:"打工人"}
+        ];
+        const hotTopicsKo=[
+            {text:"월요일싫다",cat:"work",job:"打工人"},{text:"월급언제올라",cat:"work",job:"打工人"},{text:"사장님또거짓말",cat:"work",job:"老板"},
+            {text:"오늘뭐먹지",cat:"life",job:"神秘人"},{text:"일찍자기힘들어",cat:"life",job:"学生"},{text:"왜자꾸내가계산",cat:"love",job:"打工人"},
+            {text:"전애인결혼",cat:"love",job:"神秘人"},{text:"지하철에서소리",cat:"life",job:"打工人"},{text:"코드에러뜸",cat:"work",job:"程序员"},
+            {text:"처음으로돌려달라고",cat:"work",job:"设计师"},{text:"시험떨어짐",cat:"love",job:"学生"},{text:"선생님한테혼남",cat:"life",job:"学生"},
+            {text:"오늘야근없음",cat:"work",job:"打工人"},{text:"클라이언트요구변경",cat:"work",job:"设计师"},{text:"인생힘들다",cat:"love",job:"神秘人"},
+            {text:"금요일이다",cat:"life",job:"打工人"}
+        ];
         function shuffleHot(){
-            const shuffled=[...hotTopics].sort(()=>Math.random()-0.5);
+            const hotPool=currentLang==='zh'?hotTopicsZh:currentLang==='en'?hotTopicsEn:currentLang==='ja'?hotTopicsJa:hotTopicsKo;
+            const shuffled=[...hotPool].sort(()=>Math.random()-0.5);
             const tags=document.getElementById('hotTags');
             tags.innerHTML='<span class="ht-label">🔥 热点</span>';
             shuffled.slice(0,6).forEach(t=>{
