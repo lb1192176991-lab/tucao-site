@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>全网吐槽墙</title>
-    <meta name="description" content="欢迎来到全网吐槽墙，匿名说出你想说的！">
+    <meta name="description" content="匿名说出你想说的，每条吐槽都是人民群众的声音">
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -80,6 +82,7 @@
         }
         .btn:hover { transform: scale(1.05); }
         .btn:active { transform: scale(0.95); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
         .post {
             background: #1a1a1a;
@@ -118,7 +121,6 @@
             user-select: none;
         }
         .post .actions span:hover { color: #ff6b6b; }
-        .post .actions .liked { color: #ff6b6b; }
 
         .empty-state {
             text-align: center;
@@ -134,6 +136,13 @@
             font-size: 13px;
         }
 
+        .loading { text-align: center; padding: 30px; color: #555; }
+        .toast {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            background: #333; color: #e0e0e0; padding: 12px 24px; border-radius: 8px;
+            font-size: 14px; display: none; z-index: 999;
+        }
+
         @media (max-width: 600px) {
             .header h1 { font-size: 1.8em; }
             .input-area .info { flex-direction: column; }
@@ -145,7 +154,7 @@
 <body>
     <div class="header">
         <h1>🗣️ 全网吐槽墙</h1>
-        <p>匿名说出你想说的，每条吐槽都是人民群众的声音</p>
+        <p>匿名说出你想说的 — 所有人都能看到</p>
     </div>
     
     <div class="container">
@@ -155,36 +164,43 @@
                 <input type="text" id="nickname" placeholder="匿名用户" maxlength="20">
                 <div>
                     <span class="char-count"><span id="counter">0</span>/500</span>
-                    <button class="btn" onclick="submitPost()">发送吐槽</button>
+                    <button class="btn" id="submitBtn" onclick="submitPost()">发送吐槽</button>
                 </div>
             </div>
         </div>
         
-        <div id="posts"></div>
+        <div id="posts">
+            <div class="loading">加载中...</div>
+        </div>
         
         <div class="footer">
-            数据保存在浏览器本地 · 换设备会消失 · 纯前端 · 开源源码
+            数据实时共享 · Realtime Database · 开源源码
         </div>
     </div>
 
+    <div class="toast" id="toast"></div>
+
     <script>
-        // 使用 localStorage 存储吐槽数据
-        // 如果想让大家共享吐槽，需要后端。但零成本方案先本地存。
-        // 想共享？可以用 LeanCloud 免费后端直接替换
+        const firebaseConfig = {
+            apiKey: "AIzaSyDA-zk7rLU7o8litC1BlURyocYprLqAb80",
+            authDomain: "planning-with-ai-e9272.firebaseapp.com",
+            databaseURL: "https://venting-and-complaining-default-rtdb.firebaseio.com",
+            projectId: "planning-with-ai-e9272",
+            storageBucket: "planning-with-ai-e9272.firebasestorage.app",
+            messagingSenderId: "207850905652",
+            appId: "1:207850905652:web:f158f5b24b98ebad93aa61"
+        };
 
-        function getPosts() {
-            return JSON.parse(localStorage.getItem('tucao_posts') || '[]');
-        }
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const postsRef = db.ref('posts');
 
-        function savePosts(posts) {
-            localStorage.setItem('tucao_posts', JSON.stringify(posts));
-        }
-
-        function renderPosts() {
-            const posts = getPosts();
+        // 实时加载吐槽
+        postsRef.orderByChild('createdAt').limitToLast(100).on('value', (snapshot) => {
             const container = document.getElementById('posts');
+            const data = snapshot.val();
             
-            if (posts.length === 0) {
+            if (!data) {
                 container.innerHTML = `
                     <div class="empty-state">
                         <div class="big-emoji">💬</div>
@@ -193,63 +209,72 @@
                 `;
                 return;
             }
-            
-            container.innerHTML = posts.map((post, i) => `
-                <div class="post">
-                    <div class="meta">
-                        <span class="nickname">${escapeHtml(post.nickname || '匿名用户')}</span>
-                        <span class="time">${post.time}</span>
-                    </div>
-                    <div class="content">${escapeHtml(post.content)}</div>
-                    <div class="actions">
-                        <span class="${post.liked ? 'liked' : ''}" onclick="toggleLike(${i})">
-                            ${post.liked ? '❤️' : '🤍'} ${post.likes || 0}
-                        </span>
-                        <span onclick="deletePost(${i})">🗑️ 删除</span>
-                    </div>
-                </div>
-            `).join('');
-        }
 
-        function submitPost() {
+            // 转为数组并按时间倒序
+            const posts = Object.entries(data).map(([key, val]) => ({key, ...val}));
+            posts.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+            let html = '';
+            posts.forEach(post => {
+                html += `
+                    <div class="post">
+                        <div class="meta">
+                            <span class="nickname">${escapeHtml(post.nickname || '匿名用户')}</span>
+                            <span class="time">${post.time || '刚刚'}</span>
+                        </div>
+                        <div class="content">${escapeHtml(post.content)}</div>
+                        <div class="actions">
+                            <span onclick="likePost('${post.key}')">❤️ ${post.likes || 0}</span>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        });
+
+        // 提交吐槽
+        async function submitPost() {
             const content = document.getElementById('content').value.trim();
             const nickname = document.getElementById('nickname').value.trim() || '匿名用户';
             
             if (!content) {
-                alert('写点内容再发吧！');
+                showToast('写点内容再发吧！');
                 return;
             }
-            
-            const posts = getPosts();
-            posts.unshift({
-                id: Date.now(),
-                nickname: nickname,
-                content: content,
-                time: new Date().toLocaleString('zh-CN'),
-                likes: 0,
-                liked: false
-            });
-            savePosts(posts);
-            
-            document.getElementById('content').value = '';
-            document.getElementById('counter').textContent = '0';
-            renderPosts();
+
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            btn.textContent = '发送中...';
+
+            try {
+                await postsRef.push({
+                    nickname: nickname,
+                    content: content,
+                    likes: 0,
+                    time: new Date().toLocaleString('zh-CN'),
+                    createdAt: firebase.database.ServerValue.TIMESTAMP
+                });
+
+                document.getElementById('content').value = '';
+                document.getElementById('counter').textContent = '0';
+                showToast('吐槽已发送！');
+            } catch (e) {
+                showToast('发送失败');
+            }
+
+            btn.disabled = false;
+            btn.textContent = '发送吐槽';
         }
 
-        function toggleLike(index) {
-            const posts = getPosts();
-            posts[index].liked = !posts[index].liked;
-            posts[index].likes += posts[index].liked ? 1 : -1;
-            savePosts(posts);
-            renderPosts();
-        }
-
-        function deletePost(index) {
-            if (!confirm('确定删除这条吐槽？')) return;
-            const posts = getPosts();
-            posts.splice(index, 1);
-            savePosts(posts);
-            renderPosts();
+        // 点赞
+        async function likePost(key) {
+            const ref = db.ref('posts/' + key + '/likes');
+            try {
+                const snap = await ref.once('value');
+                await ref.set((snap.val() || 0) + 1);
+            } catch (e) {
+                showToast('操作失败');
+            }
         }
 
         function escapeHtml(text) {
@@ -258,11 +283,16 @@
             return div.innerHTML;
         }
 
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.style.display = 'block';
+            setTimeout(() => { t.style.display = 'none'; }, 2000);
+        }
+
         document.getElementById('content').addEventListener('input', function() {
             document.getElementById('counter').textContent = this.value.length;
         });
-
-        renderPosts();
     </script>
 </body>
 </html>
