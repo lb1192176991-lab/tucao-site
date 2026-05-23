@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全网吐槽墙</title>
+    <meta name="description" content="欢迎来到全网吐槽墙，匿名说出你想说的！">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, "Microsoft YaHei", sans-serif;
+            background: #0f0f0f;
+            color: #e0e0e0;
+            min-height: 100vh;
+        }
+        .header {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            padding: 40px 20px;
+            text-align: center;
+            border-bottom: 1px solid #333;
+        }
+        .header h1 {
+            font-size: 2.5em;
+            background: linear-gradient(90deg, #ff6b6b, #ffd93d, #6bcb77);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+        .header p { color: #888; font-size: 1.1em; }
+        .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+        
+        .input-area {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        .input-area textarea {
+            width: 100%;
+            height: 100px;
+            background: #222;
+            border: 1px solid #444;
+            border-radius: 8px;
+            padding: 12px;
+            color: #e0e0e0;
+            font-size: 16px;
+            resize: vertical;
+            font-family: inherit;
+        }
+        .input-area textarea:focus { outline: none; border-color: #ff6b6b; }
+        .input-area .info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 12px;
+            gap: 10px;
+        }
+        .input-area input[type="text"] {
+            flex: 1;
+            background: #222;
+            border: 1px solid #444;
+            border-radius: 8px;
+            padding: 10px 12px;
+            color: #e0e0e0;
+            font-size: 14px;
+        }
+        .input-area input[type="text"]:focus { outline: none; border-color: #ff6b6b; }
+        .input-area .char-count { color: #666; font-size: 12px; }
+        .btn {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 24px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            white-space: nowrap;
+        }
+        .btn:hover { transform: scale(1.05); }
+        .btn:active { transform: scale(0.95); }
+
+        .post {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 16px;
+            transition: border-color 0.2s;
+        }
+        .post:hover { border-color: #555; }
+        .post .meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 13px;
+            color: #666;
+        }
+        .post .nickname { color: #ffd93d; font-weight: bold; }
+        .post .time { color: #555; }
+        .post .content {
+            font-size: 15px;
+            line-height: 1.6;
+            word-break: break-word;
+        }
+        .post .actions {
+            margin-top: 10px;
+            display: flex;
+            gap: 16px;
+            font-size: 13px;
+        }
+        .post .actions span {
+            cursor: pointer;
+            color: #666;
+            transition: color 0.2s;
+            user-select: none;
+        }
+        .post .actions span:hover { color: #ff6b6b; }
+        .post .actions .liked { color: #ff6b6b; }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #555;
+        }
+        .empty-state .big-emoji { font-size: 64px; margin-bottom: 20px; }
+
+        .footer {
+            text-align: center;
+            padding: 30px;
+            color: #444;
+            font-size: 13px;
+        }
+
+        @media (max-width: 600px) {
+            .header h1 { font-size: 1.8em; }
+            .input-area .info { flex-direction: column; }
+            .input-area input[type="text"] { width: 100%; }
+            .btn { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🗣️ 全网吐槽墙</h1>
+        <p>匿名说出你想说的，每条吐槽都是人民群众的声音</p>
+    </div>
+    
+    <div class="container">
+        <div class="input-area">
+            <textarea id="content" placeholder="写你想吐槽的..." maxlength="500"></textarea>
+            <div class="info">
+                <input type="text" id="nickname" placeholder="匿名用户" maxlength="20">
+                <div>
+                    <span class="char-count"><span id="counter">0</span>/500</span>
+                    <button class="btn" onclick="submitPost()">发送吐槽</button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="posts"></div>
+        
+        <div class="footer">
+            数据保存在浏览器本地 · 换设备会消失 · 纯前端 · 开源源码
+        </div>
+    </div>
+
+    <script>
+        // 使用 localStorage 存储吐槽数据
+        // 如果想让大家共享吐槽，需要后端。但零成本方案先本地存。
+        // 想共享？可以用 LeanCloud 免费后端直接替换
+
+        function getPosts() {
+            return JSON.parse(localStorage.getItem('tucao_posts') || '[]');
+        }
+
+        function savePosts(posts) {
+            localStorage.setItem('tucao_posts', JSON.stringify(posts));
+        }
+
+        function renderPosts() {
+            const posts = getPosts();
+            const container = document.getElementById('posts');
+            
+            if (posts.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="big-emoji">💬</div>
+                        <p>还没有吐槽，快来当第一个！</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = posts.map((post, i) => `
+                <div class="post">
+                    <div class="meta">
+                        <span class="nickname">${escapeHtml(post.nickname || '匿名用户')}</span>
+                        <span class="time">${post.time}</span>
+                    </div>
+                    <div class="content">${escapeHtml(post.content)}</div>
+                    <div class="actions">
+                        <span class="${post.liked ? 'liked' : ''}" onclick="toggleLike(${i})">
+                            ${post.liked ? '❤️' : '🤍'} ${post.likes || 0}
+                        </span>
+                        <span onclick="deletePost(${i})">🗑️ 删除</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function submitPost() {
+            const content = document.getElementById('content').value.trim();
+            const nickname = document.getElementById('nickname').value.trim() || '匿名用户';
+            
+            if (!content) {
+                alert('写点内容再发吧！');
+                return;
+            }
+            
+            const posts = getPosts();
+            posts.unshift({
+                id: Date.now(),
+                nickname: nickname,
+                content: content,
+                time: new Date().toLocaleString('zh-CN'),
+                likes: 0,
+                liked: false
+            });
+            savePosts(posts);
+            
+            document.getElementById('content').value = '';
+            document.getElementById('counter').textContent = '0';
+            renderPosts();
+        }
+
+        function toggleLike(index) {
+            const posts = getPosts();
+            posts[index].liked = !posts[index].liked;
+            posts[index].likes += posts[index].liked ? 1 : -1;
+            savePosts(posts);
+            renderPosts();
+        }
+
+        function deletePost(index) {
+            if (!confirm('确定删除这条吐槽？')) return;
+            const posts = getPosts();
+            posts.splice(index, 1);
+            savePosts(posts);
+            renderPosts();
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        document.getElementById('content').addEventListener('input', function() {
+            document.getElementById('counter').textContent = this.value.length;
+        });
+
+        renderPosts();
+    </script>
+</body>
+</html>
