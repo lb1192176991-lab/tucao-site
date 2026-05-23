@@ -4,61 +4,53 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>弹幕吐槽墙</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: -apple-system, "Microsoft YaHei", sans-serif;
-            background: #0a0a0a;
-            color: #fff;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: #08090a;
+            color: #f7f8f8;
             height: 100vh;
             overflow: hidden;
             display: flex;
             flex-direction: column;
+            font-feature-settings: 'cv01', 'ss03';
         }
 
         #danmaku-container {
             flex: 1;
             position: relative;
             overflow: hidden;
-            background:
-                radial-gradient(ellipse at 20% 30%, rgba(255,107,107,0.15) 0%, transparent 50%),
-                radial-gradient(ellipse at 80% 70%, rgba(77,166,255,0.15) 0%, transparent 50%),
-                radial-gradient(ellipse at 50% 50%, rgba(255,217,61,0.08) 0%, transparent 40%),
-                linear-gradient(135deg, #1a1a2e 0%, #16213e 40%, #0f3460 70%, #1a1a2e 100%);
+            background: #08090a;
         }
 
-        /* 背景装饰文字 */
+        /* 中间装饰文字 */
         #danmaku-container::before {
-            content: "🗣️ 全网吐槽墙";
+            content: "吐槽墙";
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            font-size: 60px;
-            font-weight: 900;
-            color: rgba(255,255,255,0.06);
-            text-shadow: 0 0 60px rgba(255,107,107,0.2);
+            font-size: 120px;
+            font-weight: 510;
+            color: rgba(255,255,255,0.02);
+            letter-spacing: -2.6px;
             white-space: nowrap;
             pointer-events: none;
-            letter-spacing: 10px;
+            user-select: none;
         }
 
-        /* 背景粒子装饰 */
-        #danmaku-container::after {
-            content: "";
+        .stats {
             position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background-image:
-                radial-gradient(3px 3px at 10% 20%, rgba(255,255,255,0.3), transparent),
-                radial-gradient(3px 3px at 30% 60%, rgba(255,255,255,0.2), transparent),
-                radial-gradient(3px 3px at 50% 10%, rgba(255,255,255,0.3), transparent),
-                radial-gradient(3px 3px at 70% 80%, rgba(255,255,255,0.2), transparent),
-                radial-gradient(3px 3px at 90% 40%, rgba(255,255,255,0.3), transparent),
-                radial-gradient(4px 4px at 15% 80%, rgba(255,255,255,0.15), transparent),
-                radial-gradient(4px 4px at 65% 30%, rgba(255,255,255,0.15), transparent),
-                radial-gradient(4px 4px at 85% 70%, rgba(255,255,255,0.15), transparent);
+            top: 24px;
+            right: 32px;
+            font-size: 13px;
+            color: #62666d;
+            font-weight: 400;
+            z-index: 1;
             pointer-events: none;
         }
 
@@ -66,202 +58,174 @@
         .danmaku {
             position: absolute;
             white-space: nowrap;
-            font-size: 20px;
-            font-weight: bold;
-            padding: 8px 18px;
-            border-radius: 25px;
+            font-size: 15px;
+            padding: 8px 16px;
+            border-radius: 8px;
             pointer-events: none;
-            animation: fly 9s linear forwards;
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(255,255,255,0.1);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            animation: fly 10s linear forwards;
             display: flex;
             align-items: center;
             gap: 8px;
+            border: 1px solid rgba(255,255,255,0.06);
         }
 
         @keyframes fly {
-            0% { transform: translateX(100vw) scale(0.8); opacity: 0; }
-            5% { transform: translateX(calc(100vw - 20px)) scale(1); opacity: 1; }
-            85% { opacity: 1; }
-            100% { transform: translateX(-120%) scale(0.9); opacity: 0; }
+            0% { transform: translateX(100vw); opacity: 0; }
+            4% { transform: translateX(calc(100vw - 20px)); opacity: 1; }
+            88% { opacity: 1; }
+            100% { transform: translateX(-120%); opacity: 0; }
         }
 
-        .danmaku .badge {
+        .danmaku .job-tag {
             font-size: 12px;
-            padding: 3px 10px;
-            border-radius: 12px;
-            font-weight: 600;
-            letter-spacing: 0.5px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 500;
+            letter-spacing: 0.2px;
         }
-        .badge-boss { background: #e74c3c; color: white; }
-        .badge-worker { background: #3498db; color: white; }
-        .badge-student { background: #2ecc71; color: white; }
-        .badge-teacher { background: #9b59b6; color: white; }
-        .badge-coder { background: #1abc9c; color: white; }
-        .badge-designer { background: #e67e22; color: white; }
-        .badge-doctor { background: #c0392b; color: white; }
-        .badge-seller { background: #f39c12; color: white; }
-        .badge-masked { background: #7f8c8d; color: white; }
+        .tag-boss { background: rgba(229,76,60,0.2); color: #e54c3c; border: 1px solid rgba(229,76,60,0.2); }
+        .tag-worker { background: rgba(52,152,219,0.2); color: #3498db; border: 1px solid rgba(52,152,219,0.2); }
+        .tag-student { background: rgba(46,204,113,0.2); color: #2ecc71; border: 1px solid rgba(46,204,113,0.2); }
+        .tag-teacher { background: rgba(155,89,182,0.2); color: #9b59b6; border: 1px solid rgba(155,89,182,0.2); }
+        .tag-coder { background: rgba(26,188,156,0.2); color: #1abc9c; border: 1px solid rgba(26,188,156,0.2); }
+        .tag-designer { background: rgba(230,126,34,0.2); color: #e67e22; border: 1px solid rgba(230,126,34,0.2); }
+        .tag-doctor { background: rgba(192,57,43,0.2); color: #c0392b; border: 1px solid rgba(192,57,43,0.2); }
+        .tag-seller { background: rgba(243,156,18,0.2); color: #f39c12; border: 1px solid rgba(243,156,18,0.2); }
+        .tag-masked { background: rgba(127,140,141,0.2); color: #7f8c8d; border: 1px solid rgba(127,140,141,0.2); }
 
-        .danmaku .nick { font-size: 13px; opacity: 0.6; }
+        .danmaku .nick {
+            font-size: 12px;
+            color: #8a8f98;
+        }
+        .danmaku .text {
+            font-weight: 400;
+            color: #d0d6e0;
+        }
 
-        .danmaku:nth-child(8n+1) { background: rgba(255,107,107,0.2); color: #ff6b6b; border-color: rgba(255,107,107,0.3); }
-        .danmaku:nth-child(8n+2) { background: rgba(255,217,61,0.2); color: #ffd93d; border-color: rgba(255,217,61,0.3); }
-        .danmaku:nth-child(8n+3) { background: rgba(107,203,119,0.2); color: #6bcb77; border-color: rgba(107,203,119,0.3); }
-        .danmaku:nth-child(8n+4) { background: rgba(77,166,255,0.2); color: #4da6ff; border-color: rgba(77,166,255,0.3); }
-        .danmaku:nth-child(8n+5) { background: rgba(255,128,255,0.2); color: #ff80ff; border-color: rgba(255,128,255,0.3); }
-        .danmaku:nth-child(8n+6) { background: rgba(255,200,100,0.2); color: #ffc864; border-color: rgba(255,200,100,0.3); }
-        .danmaku:nth-child(8n+7) { background: rgba(100,255,218,0.2); color: #64ffda; border-color: rgba(100,255,218,0.3); }
-        .danmaku:nth-child(8n+0) { background: rgba(179,136,255,0.2); color: #b388ff; border-color: rgba(179,136,255,0.3); }
+        /* 弹幕背景色（半透明） */
+        .danmaku:nth-child(7n+1) { background: rgba(94,106,210,0.08); }
+        .danmaku:nth-child(7n+2) { background: rgba(255,255,255,0.03); }
+        .danmaku:nth-child(7n+3) { background: rgba(94,106,210,0.05); }
+        .danmaku:nth-child(7n+4) { background: rgba(255,255,255,0.04); }
+        .danmaku:nth-child(7n+5) { background: rgba(113,112,255,0.06); }
+        .danmaku:nth-child(7n+6) { background: rgba(255,255,255,0.03); }
+        .danmaku:nth-child(7n+0) { background: rgba(94,106,210,0.07); }
 
         /* 输入区 */
         .input-area {
-            background: linear-gradient(0deg, #121212 0%, rgba(15,15,15,0.95) 100%);
-            padding: 18px 20px 24px;
+            background: #0f1011;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            padding: 20px 24px 24px;
             display: flex;
             flex-direction: column;
             align-items: center;
             gap: 10px;
-            border-top: 1px solid rgba(255,255,255,0.06);
-            backdrop-filter: blur(20px);
         }
-
-        .input-area .title-bar {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 13px;
-            color: #555;
-            margin-bottom: 2px;
-        }
-        .input-area .title-bar .dot {
-            width: 6px; height: 6px; border-radius: 50%;
-            display: inline-block;
-        }
-        .dot-red { background: #ff6b6b; }
-        .dot-yellow { background: #ffd93d; }
-        .dot-green { background: #6bcb77; }
 
         .input-row {
             display: flex;
             align-items: center;
             gap: 10px;
             width: 100%;
-            max-width: 720px;
-            background: rgba(255,255,255,0.04);
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 30px;
-            padding: 4px 4px 4px 20px;
-            transition: border-color 0.3s, box-shadow 0.3s;
-        }
-        .input-row:focus-within {
-            border-color: rgba(255,107,107,0.4);
-            box-shadow: 0 0 20px rgba(255,107,107,0.1);
+            max-width: 640px;
         }
 
-        .input-row input[type="text"] {
+        .input-row input {
             flex: 1;
-            background: transparent;
-            border: none;
-            padding: 12px 8px;
-            color: #e0e0e0;
-            font-size: 16px;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 6px;
+            padding: 10px 14px;
+            color: #d0d6e0;
+            font-size: 15px;
+            font-family: 'Inter', system-ui, sans-serif;
             outline: none;
+            transition: border-color 0.2s;
+            font-feature-settings: 'cv01', 'ss03';
         }
-        .input-row input[type="text"]::placeholder { color: #555; }
+        .input-row input:focus { border-color: #5e6ad2; }
+        .input-row input::placeholder { color: #62666d; }
 
         .input-row .btn {
-            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
-            color: white;
+            background: #5e6ad2;
+            color: #fff;
             border: none;
-            border-radius: 25px;
-            padding: 10px 24px;
-            font-size: 15px;
+            border-radius: 6px;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 500;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: background 0.2s;
             white-space: nowrap;
-            font-weight: 600;
+            font-family: 'Inter', system-ui, sans-serif;
         }
-        .input-row .btn:hover { transform: scale(1.05); filter: brightness(1.1); }
-        .input-row .btn:active { transform: scale(0.95); }
-        .input-row .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .input-row .btn:hover { background: #7170ff; }
+        .input-row .btn:active { background: #828fff; }
+        .input-row .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
         .input-meta {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
             width: 100%;
-            max-width: 720px;
+            max-width: 640px;
             font-size: 13px;
-            color: #666;
-            padding: 0 8px;
+            color: #62666d;
         }
 
         .job-select {
-            background: rgba(255,255,255,0.06);
+            background: rgba(255,255,255,0.02);
             border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 15px;
-            padding: 5px 30px 5px 12px;
-            color: #ccc;
+            border-radius: 6px;
+            padding: 5px 28px 5px 10px;
+            color: #8a8f98;
             font-size: 13px;
+            font-family: 'Inter', system-ui, sans-serif;
             outline: none;
             cursor: pointer;
             appearance: none;
             -webkit-appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%2362666d' d='M5 7L1 3h8z'/%3E%3C/svg%3E");
             background-repeat: no-repeat;
-            background-position: right 10px center;
-            transition: border-color 0.2s;
+            background-position: right 8px center;
         }
-        .job-select:focus { border-color: rgba(255,107,107,0.4); }
+        .job-select:focus { border-color: #5e6ad2; }
 
         .input-meta input {
-            background: rgba(255,255,255,0.06);
+            background: rgba(255,255,255,0.02);
             border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 15px;
-            padding: 5px 12px;
-            color: #ccc;
+            border-radius: 6px;
+            padding: 5px 10px;
+            color: #8a8f98;
             font-size: 13px;
-            width: 100px;
+            font-family: 'Inter', system-ui, sans-serif;
+            width: 90px;
             outline: none;
-            transition: border-color 0.2s;
         }
-        .input-meta input:focus { border-color: rgba(255,107,107,0.4); }
-        .input-meta .char-count { margin-left: auto; color: #555; font-size: 12px; }
+        .input-meta input:focus { border-color: #5e6ad2; }
+        .input-meta input::placeholder { color: #62666d; }
+        .input-meta .char-count { margin-left: auto; color: #62666d; font-size: 12px; }
+
+        .hint {
+            font-size: 12px;
+            color: #62666d;
+            font-weight: 400;
+        }
 
         .toast {
             position: fixed;
-            bottom: 120px;
+            bottom: 100px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(0,0,0,0.85);
-            color: #e0e0e0;
-            padding: 10px 28px;
-            border-radius: 25px;
+            background: #191a1b;
+            color: #d0d6e0;
+            padding: 8px 20px;
+            border-radius: 6px;
             font-size: 14px;
             display: none;
             z-index: 999;
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255,255,255,0.1);
-            box-shadow: 0 8px 30px rgba(0,0,0,0.5);
-        }
-
-        .hint {
-            font-size: 11px;
-            color: #333;
-            text-align: center;
-        }
-
-        /* 弹幕数量统计 */
-        .stats {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            font-size: 12px;
-            color: rgba(255,255,255,0.15);
-            pointer-events: none;
-            z-index: 1;
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: rgba(0,0,0,0.4) 0px 2px 4px;
         }
     </style>
 </head>
@@ -272,15 +236,9 @@
     </div>
 
     <div class="input-area">
-        <div class="title-bar">
-            <span class="dot dot-red"></span>
-            <span class="dot dot-yellow"></span>
-            <span class="dot dot-green"></span>
-            <span style="margin-left:6px;color:#444;">吐个槽吧</span>
-        </div>
         <div class="input-row">
-            <input type="text" id="content" placeholder="今天想吐槽什么？" maxlength="120" autofocus>
-            <button class="btn" id="submitBtn" onclick="submitPost()">发射 🚀</button>
+            <input type="text" id="content" placeholder="写你想吐槽的..." maxlength="120" autofocus>
+            <button class="btn" id="submitBtn" onclick="submitPost()">发送</button>
         </div>
         <div class="input-meta">
             <select class="job-select" id="jobSelect">
@@ -297,7 +255,7 @@
             <input type="text" id="nickname" placeholder="匿名" maxlength="10">
             <span class="char-count"><span id="counter">0</span>/120</span>
         </div>
-        <div class="hint">⏎ 回车发送 · 选择身份 · 所有人可见</div>
+        <div class="hint">⏎ 发送 · 选择身份 · 人人可见</div>
     </div>
 
     <div class="toast" id="toast"></div>
@@ -312,7 +270,6 @@
             messagingSenderId: "207850905652",
             appId: "1:207850905652:web:f158f5b24b98ebad93aa61"
         };
-
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
         const postsRef = db.ref('posts');
@@ -320,39 +277,38 @@
         const statsEl = document.getElementById('stats');
         let totalPosts = 0;
 
+        const jobTag = {
+            '打工人':'tag-worker','老板':'tag-boss','学生':'tag-student',
+            '老师':'tag-teacher','程序员':'tag-coder','设计师':'tag-designer',
+            '医生':'tag-doctor','销售':'tag-seller','神秘人':'tag-masked'
+        };
         const jobEmoji = {
             '打工人':'💼','老板':'👔','学生':'🎒','老师':'📚',
             '程序员':'💻','设计师':'🎨','医生':'🏥','销售':'📊','神秘人':'🥷'
-        };
-        const jobBadge = {
-            '打工人':'badge-worker','老板':'badge-boss','学生':'badge-student',
-            '老师':'badge-teacher','程序员':'badge-coder','设计师':'badge-designer',
-            '医生':'badge-doctor','销售':'badge-seller','神秘人':'badge-masked'
         };
 
         postsRef.on('child_added', (snap) => {
             totalPosts++;
             statsEl.textContent = totalPosts + ' 条吐槽';
+            const d = snap.val();
+            if (!d || !d.content) return;
 
-            const data = snap.val();
-            if (!data || !data.content) return;
-
-            const lines = 7;
+            const lines = 6;
             const lh = window.innerHeight / lines;
             const line = Math.floor(Math.random() * lines);
             const top = line * lh + lh * 0.1;
-            const dur = 7 + Math.random() * 5;
+            const dur = 8 + Math.random() * 4;
 
-            const job = data.job || '神秘人';
-            const emoji = jobEmoji[job] || '🥷';
-            const bc = jobBadge[job] || 'badge-masked';
+            const job = d.job || '神秘人';
+            const tc = jobTag[job] || 'tag-masked';
+            const em = jobEmoji[job] || '🥷';
 
             const el = document.createElement('div');
             el.className = 'danmaku';
             el.innerHTML = `
-                <span class="badge ${bc}">${emoji} ${job}</span>
-                <span class="nick">${esc(data.nickname||'匿名')}</span>
-                ${esc(data.content)}
+                <span class="job-tag ${tc}">${em} ${job}</span>
+                <span class="nick">${esc(d.nickname||'匿名')}</span>
+                <span class="text">${esc(d.content)}</span>
             `;
             el.style.top = top + 'px';
             el.style.animationDuration = dur + 's';
@@ -364,32 +320,22 @@
             const c = document.getElementById('content').value.trim();
             const n = document.getElementById('nickname').value.trim() || '匿名';
             const j = document.getElementById('jobSelect').value;
-            if (!c) { toast('写点内容再发射！'); return; }
-
+            if (!c) { toast('写点内容！'); return; }
             const btn = document.getElementById('submitBtn');
-            btn.disabled = true; btn.textContent = '发射中...';
+            btn.disabled = true; btn.textContent = '发送中...';
             try {
                 await postsRef.push({ nickname:n, content:c, job:j, createdAt: firebase.database.ServerValue.TIMESTAMP });
                 document.getElementById('content').value = '';
                 document.getElementById('counter').textContent = '0';
-                toast('弹幕已发射！');
-            } catch(e) { toast('发射失败'); }
-            btn.disabled = false; btn.textContent = '发射 🚀';
+                toast('已发送');
+            } catch(e) { toast('失败'); }
+            btn.disabled = false; btn.textContent = '发送';
         }
 
         function esc(t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
-        function toast(msg) {
-            const t = document.getElementById('toast');
-            t.textContent = msg; t.style.display = 'block';
-            setTimeout(() => t.style.display = 'none', 2000);
-        }
-
-        document.getElementById('content').addEventListener('input', function() {
-            document.getElementById('counter').textContent = this.value.length;
-        });
-        document.getElementById('content').addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitPost(); }
-        });
+        function toast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 2000); }
+        document.getElementById('content').addEventListener('input', function() { document.getElementById('counter').textContent = this.value.length; });
+        document.getElementById('content').addEventListener('keydown', function(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitPost(); } });
     </script>
 </body>
 </html>
