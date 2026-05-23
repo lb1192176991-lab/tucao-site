@@ -386,12 +386,16 @@
             document.getElementById('subBtn').textContent=l.send;
             document.querySelector('.hint').textContent=l.hint;
             document.querySelector('.sec-title').textContent=l.cat;
-            // 侧栏分类
+            // 侧栏分类 - 只改文字部分
             const catItems=document.querySelectorAll('.sidebar .item');
-            const catKeys=['all','生活','工作','情感','搞笑','其他'];
             const catLabels=[l.all,l.life,l.work,l.love,l.funny,l.other];
             catItems.forEach((el,i)=>{
-                if(i<catLabels.length) el.innerHTML='<span class="ic">'+el.querySelector('.ic').textContent+'</span>'+catLabels[i]+'<span class="cnt" id="c'+catKeys[i]+'">0</span>';
+                if(i<catLabels.length){
+                    const ic=el.querySelector('.ic').textContent;
+                    const cnt=el.querySelector('.cnt');
+                    el.innerHTML='<span class="ic">'+ic+'</span>'+catLabels[i];
+                    if(cnt) el.appendChild(cnt);
+                }
             });
             document.querySelectorAll('.sec-title')[1].textContent=l.hotTitle;
             document.getElementById('langSelect').value=currentLang;
