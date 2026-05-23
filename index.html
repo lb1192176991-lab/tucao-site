@@ -1,642 +1,149 @@
-<!-- v2.0 -->
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>吐槽墙 · 匿名社区</title>
-    <meta name="description" content="匿名吐槽弹幕社区，工作生活情感，想吐就吐">
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        :root {
-            --bg:#0f0f0f; --surface:#161616; --card:#1e1e1e; --card-hover:#252525;
-            --text:#f0f0f0; --text2:#9a9a9a; --text3:#5a5a5a;
-            --green:#1ed760; --green-h:#2ae66d; --green-dim:rgba(30,215,96,0.08);
-            --red:#f3727f; --blue:#539df5; --orange:#ffa42b;
-            --pill:9999px; --r:8px; --r2:12px;
-            --shadow:0 8px 30px rgba(0,0,0,0.5); --shadow-sm:0 2px 8px rgba(0,0,0,0.3);
-            --font:'DM Sans',-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;
-            --nav-w:200px;
-        }
-        *{margin:0;padding:0;box-sizing:border-box;scrollbar-width:thin;scrollbar-color:#2a2a2a transparent;}
-        ::-webkit-scrollbar{width:4px;}
-        ::-webkit-scrollbar-thumb{background:#2a2a2a;border-radius:4px;}
-        body{font-family:var(--font);background:var(--bg);color:var(--text);height:100dvh;overflow:hidden;display:flex;flex-direction:column;}
-
-        /* ===== 顶栏 ===== */
-        .topbar{
-            display:flex;align-items:center;justify-content:space-between;
-            padding:0 20px;height:52px;background:var(--bg);flex-shrink:0;
-            border-bottom:1px solid rgba(255,255,255,0.04);z-index:100;
-        }
-        .topbar .logo{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:700;}
-        .topbar .logo .mark{
-            width:30px;height:30px;background:linear-gradient(135deg,var(--green),#17b34a);
-            border-radius:8px;display:flex;align-items:center;justify-content:center;
-            font-size:13px;color:#000;
-        }
-        .topbar .tabs{display:flex;align-items:center;gap:4px;background:var(--surface);border-radius:var(--pill);padding:3px;}
-        .topbar .tabs .tab{
-            padding:6px 16px;border-radius:var(--pill);font-size:13px;font-weight:500;
-            color:var(--text3);cursor:pointer;transition:all .2s;user-select:none;
-        }
-        .topbar .tabs .tab:hover{color:var(--text2);}
-        .topbar .tabs .tab.active{background:var(--card);color:var(--text);}
-        .topbar .stats{font-size:12px;color:var(--text3);display:flex;align-items:center;gap:6px;}
-        .topbar .stats b{color:var(--green);font-weight:700;}
-        .topbar .stats .lang-btn{font-size:14px;cursor:pointer;margin-left:6px;transition:transform .2s;display:inline-block;}
-        .topbar .stats .lang-btn:hover{transform:scale(1.2);}
-        .lang-picker{
-            background:transparent;border:1px solid rgba(255,255,255,0.08);border-radius:6px;
-            padding:2px 6px;color:var(--text2);font-size:11px;font-family:var(--font);
-            outline:none;cursor:pointer;margin-left:4px;
-        }
-        .lang-picker:focus{border-color:var(--green);}
-
-        /* ===== 主体 ===== */
-        .main{flex:1;display:flex;overflow:hidden;position:relative;}
-
-        /* ===== 侧栏 ===== */
-        .sidebar{
-            width:var(--nav-w);background:var(--bg);flex-shrink:0;
-            padding:16px 12px;overflow-y:auto;border-right:1px solid rgba(255,255,255,0.04);
-        }
-        .sidebar .sec-title{
-            font-size:10px;color:var(--text3);text-transform:uppercase;
-            letter-spacing:1.5px;margin-bottom:10px;padding:0 8px;
-        }
-        .sidebar .item{
-            display:flex;align-items:center;gap:10px;padding:9px 12px;
-            border-radius:var(--r);font-size:13px;font-weight:500;color:var(--text2);
-            cursor:pointer;transition:all .15s;margin-bottom:1px;
-        }
-        .sidebar .item:hover{background:var(--surface);color:var(--text);}
-        .sidebar .item.active{background:var(--green-dim);color:var(--green);}
-        .sidebar .item .icon{font-size:15px;width:20px;text-align:center;}
-        .sidebar .item .count{margin-left:auto;font-size:11px;color:var(--text3);}
-        .sidebar .hr{height:1px;background:rgba(255,255,255,0.04);margin:14px 8px;}
-
-        /* ===== 热榜 ===== */
-        .hot-item{
-            display:flex;align-items:center;gap:8px;padding:7px 8px;
-            border-radius:var(--r);cursor:pointer;transition:background .15s;
-        }
-        .hot-item:hover{background:var(--surface);}
-        .hot-item .rk{font-weight:700;font-size:12px;width:20px;text-align:center;color:var(--text3);}
-        .hot-item .rk.g{color:var(--green);}
-        .hot-item .ht{font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;color:var(--text2);}
-        .hot-item .hl{font-size:10px;color:var(--text3);}
-
-        /* ===== 弹幕容器 ===== */
-        #dm-ctx{flex:1;position:relative;overflow:hidden;background:var(--bg);}
-        #dm-ctx::before{
-            content:"TUCΛO";position:absolute;top:50%;left:50%;
-            transform:translate(-50%,-50%);font-size:clamp(80px,18vw,150px);
-            font-weight:800;color:rgba(255,255,255,0.008);letter-spacing:14px;
-            pointer-events:none;user-select:none;
-        }
-        .empty-box{
-            position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-            text-align:center;color:var(--text3);pointer-events:none;z-index:0;
-        }
-        .empty-box .e{font-size:44px;margin-bottom:6px;}
-        .empty-box p{font-size:13px;}
-
-        /* ===== 弹幕 ===== */
-        .dm{
-            position:absolute;white-space:nowrap;font-size:13px;
-            padding:7px 14px;border-radius:var(--pill);pointer-events:none;
-            animation:fly 11s linear forwards;display:flex;align-items:center;gap:6px;
-            background:var(--card);border:1px solid rgba(255,255,255,0.04);
-            box-shadow:var(--shadow-sm);backdrop-filter:blur(8px);
-        }
-        @keyframes fly{
-            0%{transform:translateX(100vw) scale(.9);opacity:0}
-            3%{transform:translateX(calc(100vw - 30px)) scale(1);opacity:1}
-            85%{opacity:1}
-            100%{transform:translateX(-120%) scale(.95);opacity:0}
-        }
-        .dm .j{font-size:10px;padding:2px 10px;border-radius:var(--pill);font-weight:600;}
-        /* 头像圆点 */
-        .dm .av{
-            width:26px;height:26px;border-radius:50%;flex-shrink:0;
-            display:flex;align-items:center;justify-content:center;
-            font-size:11px;font-weight:600;color:#000;margin-right:2px;
-        }
-        .a-boss{background:linear-gradient(135deg,#f3727f,#e74c3c)}
-        .a-worker{background:linear-gradient(135deg,#539df5,#2980b9)}
-        .a-student{background:linear-gradient(135deg,#1ed760,#27ae60)}
-        .a-teacher{background:linear-gradient(135deg,#ffa42b,#e67e22)}
-        .a-coder{background:linear-gradient(135deg,#1ed760,#17b34a)}
-        .a-designer{background:linear-gradient(135deg,#ffa42b,#f39c12)}
-        .a-doctor{background:linear-gradient(135deg,#f3727f,#c0392b)}
-        .a-seller{background:linear-gradient(135deg,#539df5,#3498db)}
-        .a-masked{background:linear-gradient(135deg,#95a5a6,#7f8c8d)}
-        .j-boss{background:rgba(243,114,127,.15);color:#f3727f}
-        .j-worker{background:rgba(83,157,245,.15);color:#539df5}
-        .j-student{background:rgba(30,215,96,.15);color:#1ed760}
-        .j-teacher{background:rgba(255,164,43,.15);color:#ffa42b}
-        .j-coder{background:rgba(30,215,96,.12);color:#1ed760}
-        .j-designer{background:rgba(255,164,43,.12);color:#ffa42b}
-        .j-doctor{background:rgba(243,114,127,.12);color:#f3727f}
-        .j-seller{background:rgba(83,157,245,.12);color:#539df5}
-        .j-masked{background:rgba(150,150,150,.12);color:#999}
-        .dm .n{font-size:11px;color:var(--text3)}
-        .dm .t{font-weight:400;color:var(--text2)}
-        .dm .cat-badge{
-            font-size:10px;padding:1px 7px;border-radius:var(--pill);
-            background:rgba(255,255,255,0.05);color:var(--text3);
-        }
-
-        /* ===== 输入 ===== */
-        .input-area{
-            background:var(--bg);padding:10px 20px 14px;display:flex;
-            flex-direction:column;align-items:center;gap:8px;flex-shrink:0;
-            border-top:1px solid rgba(255,255,255,0.04);
-        }
-        .ir{
-            display:flex;align-items:center;gap:8px;width:100%;max-width:720px;
-            background:var(--surface);border-radius:var(--pill);padding:3px 3px 3px 16px;
-            border:1px solid rgba(255,255,255,0.06);transition:border-color .25s,box-shadow .25s;
-        }
-        .ir:focus-within{border-color:rgba(30,215,96,0.3);box-shadow:0 0 0 2px rgba(30,215,96,0.06);}
-        .ir input{
-            flex:1;background:transparent;border:none;padding:10px 8px;color:var(--text);
-            font-size:14px;font-family:var(--font);outline:none;
-        }
-        .ir input::placeholder{color:var(--text3);}
-        .ir .btn{
-            background:var(--green);color:#000;border:none;border-radius:var(--pill);
-            padding:8px 22px;font-size:12px;font-weight:700;font-family:var(--font);
-            cursor:pointer;transition:all .15s;white-space:nowrap;text-transform:uppercase;letter-spacing:1px;
-        }
-        .ir .btn:hover{background:var(--green-h);transform:scale(1.03);}
-        .ir .btn:active{transform:scale(.97);}
-        .ir .btn:disabled{opacity:.4;cursor:not-allowed;transform:none;}
-        .im{
-            display:flex;align-items:center;gap:8px;width:100%;max-width:720px;
-            font-size:12px;color:var(--text3);
-        }
-        .im select,.im .ni{
-            background:var(--surface);border:1px solid rgba(255,255,255,0.05);
-            border-radius:var(--pill);padding:4px 24px 4px 10px;color:var(--text2);
-            font-size:11px;font-family:var(--font);font-weight:500;outline:none;cursor:pointer;
-            appearance:none;-webkit-appearance:none;
-            background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3E%3Cpath fill='%235a5a5a' d='M4 6L1 2h6z'/%3E%3C/svg%3E");
-            background-repeat:no-repeat;background-position:right 8px center;
-            transition:border-color .2s;
-        }
-        .im .ni{
-            width:80px;cursor:text;background-image:none;padding:4px 10px;
-        }
-        .im select:focus,.im .ni:focus{border-color:rgba(30,215,96,0.3);}
-        .im .cc{margin-left:auto;font-size:11px;color:var(--text3);}
-        .hint{font-size:10px;color:rgba(255,255,255,.05);letter-spacing:.5px;}
-        
-        /* 热点标签 */
-        .hot-tags{
-            display:flex;align-items:center;gap:6px;
-            width:100%;max-width:720px;margin-top:-4px;margin-bottom:2px;
-            overflow-x:auto;white-space:nowrap;padding:2px 0;
-        }
-        .hot-tags::-webkit-scrollbar{display:none;}
-        .ht-label{font-size:10px;color:var(--text3);margin-right:4px;flex-shrink:0;}
-        .ht-item{
-            display:inline-flex;align-items:center;gap:4px;
-            padding:3px 12px;border-radius:var(--pill);font-size:11px;
-            background:rgba(30,215,96,0.06);color:var(--text2);
-            cursor:pointer;transition:all .2s;flex-shrink:0;
-            border:1px solid rgba(30,215,96,0.08);
-        }
-        .ht-item:hover{background:rgba(30,215,96,0.12);color:var(--green);transform:scale(1.03);}
-        .ht-item:active{transform:scale(.95);}
-
-        .toast{
-            position:fixed;bottom:90px;left:50%;transform:translateX(-50%);
-            background:var(--card);color:var(--text2);padding:8px 20px;
-            border-radius:var(--pill);font-size:12px;font-weight:500;display:none;
-            z-index:999;border:1px solid rgba(255,255,255,.05);box-shadow:var(--shadow);
-            backdrop-filter:blur(12px);
-        }
-
-        /* 响应 */
-        @media(max-width:768px){
-            .sidebar{display:none;}
-            .topbar .tabs .tab{padding:5px 12px;font-size:12px;}
-            .topbar .stats{display:none;}
-        }
-        @media(max-width:480px){
-            .im{flex-wrap:wrap;gap:6px;}
-            .im .ni{width:70px;}
-            .im .cc{margin-left:0;}
-            .topbar{padding:0 12px;}
-            .input-area{padding:8px 12px 12px;}
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI视觉创作 · 接单中</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0a0a0a;color:#fff;line-height:1.6;min-height:100vh}
+.container{max-width:900px;margin:0 auto;padding:40px 20px}
+.hero{text-align:center;padding:60px 0 40px}
+.hero h1{font-size:3em;margin-bottom:15px;background:linear-gradient(135deg,#667eea,#764ba2,#f093fb);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{color:#888;font-size:1.2em;max-width:600px;margin:0 auto}
+.pricing{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;margin:40px 0}
+.card{background:#1a1a1a;border-radius:16px;padding:25px;border:1px solid #333;transition:transform 0.2s,border-color 0.2s}
+.card:hover{transform:translateY(-4px);border-color:#667eea}
+.card h3{color:#667eea;margin-bottom:8px;font-size:1.1em}
+.card .price{font-size:2em;font-weight:bold;margin:12px 0}
+.card .desc{color:#666;font-size:0.9em;line-height:1.5}
+.features{background:#111;border-radius:16px;padding:30px;margin:30px 0}
+.features h2{color:#667eea;margin-bottom:20px}
+.features li{padding:10px 0;border-bottom:1px solid #222;list-style:none}
+.features li::before{content:"✦ ";color:#667eea}
+.tech{display:flex;flex-wrap:wrap;gap:8px;margin:30px 0}
+.tech span{background:#222;padding:6px 14px;border-radius:20px;font-size:0.85em;color:#999;border:1px solid #333}
+.cta-section{text-align:center;padding:40px 0;border-top:1px solid #222;margin-top:40px}
+.cta-section p{color:#555;font-size:0.9em;margin-top:10px}
+.btn{border:none;padding:15px 50px;border-radius:10px;font-size:1.1em;cursor:pointer;font-weight:bold;transition:opacity 0.2s}
+.btn-primary{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff}
+.btn-primary:hover{opacity:0.9}
+.comments{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:15px;margin:30px 0}
+.comment{background:#111;padding:20px;border-radius:12px;border:1px solid #222}
+.comment p{color:#888;font-size:0.9em;font-style:italic}
+.comment .author{color:#555;font-size:0.8em;margin-top:10px}
+.footer{text-align:center;color:#333;padding:40px 0;font-size:0.85em}
+canvas.particles{position:fixed;top:0;left:0;z-index:-1;opacity:0.3}
+</style>
 </head>
 <body>
+<canvas class="particles" id="particles"></canvas>
+<div class="container">
+  <div class="hero">
+    <h1>AI 视觉创作</h1>
+    <p>ComfyUI 工作流定制 · AI 图像/视频生成 · 角色一致性方案</p>
+    <div style="margin-top:10px;font-size:0.9em;color:#555">最快 24 小时交付 · 不满意退款</div>
+  </div>
 
-    <!-- 顶栏 -->
-    <div class="topbar">
-        <div class="logo"><div class="mark">💬</div>吐槽墙</div>
-        <div class="tabs">
-            <div class="tab active" data-view="dm" onclick="switchView('dm')">✨ 弹幕</div>
-            <div class="tab" data-view="hot" onclick="switchView('hot')">🔥 热榜</div>
-            <div class="tab" data-view="mine" onclick="switchView('mine')">👤 我的</div>
-        </div>
-        <div class="stats"><b id="sCount">0</b> 条弹幕
-            <select id="langSelect" class="lang-picker" onchange="setLang(this.value)">
-                <option value="zh">🇨🇳 中文</option>
-                <option value="en">🇺🇸 English</option>
-                <option value="ja">🇯🇵 日本語</option>
-                <option value="ko">🇰🇷 한국어</option>
-            </select>
-        </div>
+  <div class="pricing">
+    <div class="card">
+      <h3>🎨 AI 头像/写真</h3>
+      <div class="price">¥39<small style="font-size:0.4em;color:#666">起</small></div>
+      <div class="desc">10张高质量AI头像<br>支持多种风格<br>2小时交付</div>
     </div>
-
-    <!-- 主体 -->
-    <div class="main">
-        <!-- 侧栏 -->
-        <div class="sidebar">
-            <div class="sec-title">📂 分类</div>
-            <div class="item active" data-cat="all" onclick="filter('all')"><span class="icon">📋</span>全部 <span class="count" id="cAll">0</span></div>
-            <div class="item" data-cat="生活" onclick="filter('生活')"><span class="icon">🏠</span>生活 <span class="count" id="c生活">0</span></div>
-            <div class="item" data-cat="工作" onclick="filter('工作')"><span class="icon">💼</span>工作 <span class="count" id="c工作">0</span></div>
-            <div class="item" data-cat="情感" onclick="filter('情感')"><span class="icon">❤️</span>情感 <span class="count" id="c情感">0</span></div>
-            <div class="item" data-cat="搞笑" onclick="filter('搞笑')"><span class="icon">😂</span>搞笑 <span class="count" id="c搞笑">0</span></div>
-            <div class="item" data-cat="其他" onclick="filter('其他')"><span class="icon">📌</span>其他 <span class="count" id="c其他">0</span></div>
-            <div class="hr"></div>
-            <div class="sec-title" id="hotTitle">🔥 热榜 Top 10</div>
-            <div id="hotList"><div style="color:var(--text3);font-size:11px;">加载中...</div></div>
-        </div>
-
-        <!-- 弹幕容器 -->
-        <div id="dm-ctx">
-            <div class="empty-box" id="emptyBox">
-                <div class="e">💬</div>
-                <p>还没有吐槽，来做第一个吧</p>
-            </div>
-        </div>
+    <div class="card">
+      <h3>⚡ 工作流定制</h3>
+      <div class="price">¥200<small style="font-size:0.4em;color:#666">起</small></div>
+      <div class="desc">专属ComfyUI工作流<br>角色一致性方案<br>批量出图脚本</div>
     </div>
-
-    <!-- 输入 -->
-    <div class="input-area">
-        <div class="ir">
-            <input type="text" id="content" placeholder="今天想吐槽什么？" maxlength="120" autofocus>
-            <button class="btn" id="subBtn" onclick="submit()">发射</button>
-        </div>
-        <div class="im">
-            <select id="catS">
-                <option value="生活">🏠 生活</option>
-                <option value="工作">💼 工作</option>
-                <option value="情感">❤️ 情感</option>
-                <option value="搞笑">😂 搞笑</option>
-                <option value="其他">📌 其他</option>
-            </select>
-            <select id="jobS">
-                <option value="打工人">💼 打工人</option>
-                <option value="老板">👔 老板</option>
-                <option value="学生">🎒 学生</option>
-                <option value="老师">📚 老师</option>
-                <option value="程序员">💻 程序员</option>
-                <option value="设计师">🎨 设计师</option>
-                <option value="医生">🏥 医生</option>
-                <option value="销售">📊 销售</option>
-                <option value="神秘人">🥷 神秘人</option>
-                <option value="__custom__">✏️ 自定义...</option>
-            </select>
-            <input class="ni" type="text" id="customJob" placeholder="输入职业" maxlength="10" style="display:none;">
-            <input class="ni" type="text" id="nick" placeholder="匿名" maxlength="10">
-            <span class="cc"><span id="counter">0</span>/120</span>
-        </div>
-        <div class="hint">⏎ 发送 · 选择分类和身份 · 全部匿名</div>
+    <div class="card">
+      <h3>🎬 AI 视频</h3>
+      <div class="price">¥500<small style="font-size:0.4em;color:#666">起</small></div>
+      <div class="desc">AI动漫短剧/宣传片<br>Wan/Hunyuan视频<br>1080p高清输出</div>
     </div>
-    
-    <!-- 热点推荐 -->
-    <div class="hot-tags" id="hotTags">
-        <span class="ht-label">🔥 热点</span>
+    <div class="card">
+      <h3>🛒 电商产品图</h3>
+      <div class="price">¥299<small style="font-size:0.4em;color:#666">/套</small></div>
+      <div class="desc">AI产品场景图<br>模特换装<br>100张起批量</div>
     </div>
+  </div>
 
-    <div class="toast" id="toast"></div>
+  <div class="features">
+    <h2>为什么选我</h2>
+    <ul>
+      <li>角色从头到尾不崩脸，支持多角色同框</li>
+      <li>批量生产，一天几百张高质量出图</li>
+      <li>多模型支持：DreamShaper / Flux / SD3 / Hunyuan Video</li>
+      <li>AI视频生成：Wan / LCM / AnimateDiff</li>
+      <li>工作流定制 24小时内出初稿</li>
+    </ul>
+  </div>
 
-    <script>
-        const SUPABASE_URL = 'https://xvnkmvsdpbyhjlmikzvn.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_TdiUUo7VIp621zQ-Jq8l8A_WxAVcapu';
-        const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        const ctx=document.getElementById('dm-ctx'), sCount=document.getElementById('sCount'), empty=document.getElementById('emptyBox');
-        const hotEl=document.getElementById('hotList');
+  <div class="tech">
+    <span>ComfyUI</span><span>Stable Diffusion</span><span>Flux</span>
+    <span>IP-Adapter</span><span>AnimateDiff</span><span>LoRA</span>
+    <span>ControlNet</span><span>Wan Video</span><span>DreamShaper</span>
+  </div>
 
-        const JT={'打工人':'j-worker','老板':'j-boss','学生':'j-student','老师':'j-teacher','程序员':'j-coder','设计师':'j-designer','医生':'j-doctor','销售':'j-seller','神秘人':'j-masked'};
-        const JE={'打工人':'💼','老板':'👔','学生':'🎒','老师':'📚','程序员':'💻','设计师':'🎨','医生':'🏥','销售':'📊','神秘人':'🥷'};
-        const AT={'打工人':'a-worker','老板':'a-boss','学生':'a-student','老师':'a-teacher','程序员':'a-coder','设计师':'a-designer','医生':'a-doctor','销售':'a-seller','神秘人':'a-masked'};
-        const AC={'打工人':'#f3727f','老板':'#539df5','学生':'#1ed760','老师':'#ffa42b','程序员':'#1ed760','设计师':'#ffa42b','医生':'#f3727f','销售':'#539df5','神秘人':'#95a5a6'};
+  <h2 style="color:#667eea;margin-bottom:15px">客户反馈</h2>
+  <div class="comments">
+    <div class="comment">
+      <p>"工作流太稳了，角色换了20个场景脸都不崩"</p>
+      <div class="author">— 动漫短剧创作者</div>
+    </div>
+    <div class="comment">
+      <p>"一天帮我出了500张电商图，效率拉满"</p>
+      <div class="author">— 淘宝店主</div>
+    </div>
+    <div class="comment">
+      <p>"定制的工作流比我之前买的500刀的还专业"</p>
+      <div class="author">— 独立开发者</div>
+    </div>
+  </div>
 
-        // ====== 多语言 ======
-        let currentLang='zh';
-        const LANG={
-            zh:{
-                title:'吐槽墙',placeholder:'今天想吐槽什么？',send:'发射',sending:'发送中',
-                empty:'还没有吐槽',stat:'条弹幕',hot:'🔥 热榜',dm:'✨ 弹幕',mine:'👤 我的',
-                all:'全部',life:'生活',work:'工作',love:'情感',funny:'搞笑',other:'其他',
-                hint:'⏎ 发送 · 选择分类和身份 · 全部匿名',toast:'已发送 ✦',fill:'写点内容',
-                cat:'📂 分类',hotTitle:'🔥 热榜 Top 10',loading:'加载中...',anon:'匿名',
-                custom:'✏️ 自定义...',jobPlaceholder:'输入职业'
-            },
-            en:{
-                title:'Vent Wall',placeholder:'What\'s on your mind?',send:'Send',sending:'Sending...',
-                empty:'No posts yet',stat:'posts',hot:'🔥 Trending',dm:'✨ Live',mine:'👤 Me',
-                all:'All',life:'Life',work:'Work',love:'Love',funny:'Funny',other:'Other',
-                hint:'⏎ Send · Choose role · Anonymous',toast:'Sent ✦',fill:'Write something',
-                cat:'📂 Categories',hotTitle:'🔥 Top 10',loading:'Loading...',anon:'Anonymous',
-                custom:'✏️ Custom...',jobPlaceholder:'Enter job'
-            },
-            ja:{
-                title:'愚痴の壁',placeholder:'何を愚痴りたい？',send:'送信',sending:'送信中...',
-                empty:'まだ投稿がありません',stat:'件',hot:'🔥 トレンド',dm:'✨ ライブ',mine:'👤 マイ',
-                all:'すべて',life:'生活',work:'仕事',love:'恋愛',funny:'面白い',other:'その他',
-                hint:'⏎ 送信 · 匿名',toast:'送信完了 ✦',fill:'内容を入力',
-                cat:'📂 カテゴリ',hotTitle:'🔥 トップ10',loading:'読み込み中...',anon:'匿名',
-                custom:'✏️ カスタム...',jobPlaceholder:'職業を入力'
-            },
-            ko:{
-                title:'불평벽',placeholder:'무슨 불평이 있나요?',send:'보내기',sending:'보내는 중...',
-                empty:'아직 글이 없습니다',stat:'개',hot:'🔥 인기',dm:'✨ 실시간',mine:'👤 내',
-                all:'전체',life:'생활',work:'직장',love:'연애',funny:'웃김',other:'기타',
-                hint:'⏎ 보내기 · 익명',toast:'보냄 ✦',fill:'내용 입력',
-                cat:'📂 카테고리',hotTitle:'🔥 톱10',loading:'로딩 중...',anon:'익명',
-                custom:'✏️ 커스텀...',jobPlaceholder:'직업 입력'
-            }
-        };
+  <div class="cta-section">
+    <div onclick="alert('微信: 请加好友咨询')" class="btn btn-primary" style="display:inline-block">立即咨询 →</div>
+    <p>小红书 / 闲鱼 搜索「AI视觉创作」可查看更多案例</p>
+    <p style="margin-top:5px;color:#444">或私信获取微信，24小时内回复</p>
+  </div>
 
-        function t(key){return (LANG[currentLang]||LANG.zh)[key]||key;}
+  <div class="footer">
+    <p>Powered by ComfyUI + Hermes Agent</p>
+    <p>© 2026 AI视觉创作工作室</p>
+  </div>
+</div>
 
-        function setLang(lang){
-            currentLang=lang;
-            // 直接暴力替换所有文字
-            const l=LANG[lang];
-            document.title=l.title;
-            // 顶栏
-            document.querySelector('.logo').childNodes[1].textContent=l.title;
-            document.querySelector('[data-view="dm"]').textContent=l.dm;
-            document.querySelector('[data-view="hot"]').textContent=l.hot;
-            document.querySelector('[data-view="mine"]').textContent=l.mine;
-            // 输入
-            document.getElementById('content').placeholder=l.placeholder;
-            document.getElementById('subBtn').textContent=l.send;
-            document.querySelector('.hint').textContent=l.hint;
-            // 侧栏标题
-            const secTitles=document.querySelectorAll('.sec-title');
-            if(secTitles.length>0) secTitles[0].textContent=l.cat;
-            if(secTitles.length>1) secTitles[1].textContent=l.hotTitle;
-            // 侧栏分类
-            const items=document.querySelectorAll('.sidebar .item');
-            const cats=[l.all,l.life,l.work,l.love,l.funny,l.other];
-            const icons=['📋','🏠','💼','❤️','😂','📌'];
-            items.forEach((el,i)=>{
-                if(i<cats.length){
-                    const cnt=el.querySelector('.cnt');
-                    if(cnt) el.innerHTML='<span class="ic">'+icons[i]+'</span>'+cats[i]+'<span class="cnt">'+cnt.textContent+'</span>';
-                    else el.innerHTML='<span class="ic">'+icons[i]+'</span>'+cats[i];
-                }
-            });
-            // 空状态
-            const emptyP=document.querySelector('.empty-box p');
-            if(emptyP) emptyP.textContent=l.empty;
-            // 统计文字
-            const statsText=document.querySelector('.stats');
-            if(statsText) statsText.innerHTML='<b id="sCount">'+total+'</b> '+l.stat+' <select id="langSelect" class="lang-picker" onchange="setLang(this.value)"><option value="zh">🇨🇳 中文</option><option value="en">🇺🇸 English</option><option value="ja">🇯🇵 日本語</option><option value="ko">🇰🇷 한국어</option></select>';
-            // 重置选择器
-            document.getElementById('langSelect').value=lang;
-            // 热点
-            shuffleHot();
-            toast('🌐 '+lang.toUpperCase());
-        }
-
-        let total=0, seen={}, catCount={}, curFilter='all', allPosts=[];
-        let queue=[], isPlaying=false;
-
-        // 弹幕队列循环播放
-        function startLoop(){
-            if(isPlaying||queue.length===0) return;
-            isPlaying=true;
-            function next(){
-                if(queue.length===0){isPlaying=false; return;}
-                const item=queue.shift();
-                launch(item);
-                setTimeout(next, 800+Math.random()*600);
-            }
-            // 先快速发射一批
-            for(let i=0;i<Math.min(8,queue.length);i++){
-                const item=queue.shift();
-                setTimeout(()=>launch(item), i*300);
-            }
-            setTimeout(()=>{
-                isPlaying=false;
-                if(queue.length>0) startLoop();
-            }, Math.min(8,queue.length)*300+500);
-        }
-
-        // 补充队列
-        function feedQueue(){
-            if(allPosts.length===0) return;
-            // 随机选一条，不要连续重复
-            const pool=allPosts.filter(p=>p&&p.content);
-            if(pool.length===0) return;
-            const pick=pool[Math.floor(Math.random()*pool.length)];
-            queue.push(pick);
-            if(!isPlaying) startLoop();
-        }
-
-        // 每条弹幕移除后补充新弹幕
-        function scheduleNext(){
-            setTimeout(feedQueue, 1000+Math.random()*2000);
-        }
-
-        // 加载历史数据
-        async function loadPosts() {
-            const { data, error } = await sb.from('posts').select('*').order('created_at', { ascending: false }).limit(200);
-            if (error) { console.error(error); return; }
-            if (!data || data.length === 0) return;
-            empty.style.display = 'none';
-            total = data.length; sCount.textContent = total;
-            allPosts = [];
-            data.reverse().forEach((v, i) => {
-                seen[v.id] = 1;
-                if (v && v.content) {
-                    allPosts.push(v);
-                    const c = v.category || '其他';
-                    catCount[c] = (catCount[c] || 0) + 1;
-                    if (curFilter === 'all' || c === curFilter) setTimeout(() => launch(v), i * 100);
-                }
-            });
-            updateCounts(); updateHot();
-            setTimeout(() => { for (let i = 0; i < 5; i++) feedQueue(); }, data.length * 100 + 500);
-        }
-        loadPosts();
-
-        // 实时监听新数据 (每5秒轮询)
-        let lastTime = Date.now();
-        setInterval(async () => {
-            const { data } = await sb.from('posts').select('*').gt('created_at', lastTime).order('created_at', { ascending: true });
-            if (!data || data.length === 0) return;
-            lastTime = Date.now();
-            data.forEach(d => {
-                if (!d || !d.content || seen[d.id]) return;
-                seen[d.id] = 1; empty.style.display = 'none';
-                total++; sCount.textContent = total;
-                const c = d.category || '其他'; catCount[c] = (catCount[c] || 0) + 1;
-                updateCounts();
-                allPosts.push(d);
-                if (curFilter === 'all' || c === curFilter) launch(d);
-                updateHot();
-            });
-        }, 5000);
-
-        function launch(d){
-            const lines=5; const lh=window.innerHeight/lines;
-            const line=Math.floor(Math.random()*lines);
-            const top=line*lh+lh*0.2; const dur=9+Math.random()*5;
-            const job=d.job||'神秘人'; const tag=JT[job]||'j-masked'; const em=JE[job]||'🥷';
-            const av=AT[job]||'a-masked';
-            const el=document.createElement('div');
-            el.className='dm';
-            el.innerHTML=`<span class="av ${av}">${em}</span><span class="j ${tag}">${job}</span><span class="n">${esc(d.nickname||'匿名')}</span><span class="t">${esc(d.content)}</span>`;
-            el.style.top=top+'px'; el.style.animationDuration=dur+'s';
-            ctx.appendChild(el);
-            // 移除后补充队列
-            setTimeout(()=>{scheduleNext();},(dur+2)*1000);
-        }
-
-        function updateCounts(){
-            const keys=['生活','工作','情感','搞笑','其他'];
-            document.getElementById('cAll').textContent=total;
-            keys.forEach(k=>{
-                const el=document.getElementById('c'+k);
-                if(el) el.textContent=catCount[k]||0;
-            });
-        }
-
-        function updateHot(){
-            const s=[...allPosts].sort((a,b)=>(b.likes||0)-(a.likes||0)).slice(0,10);
-            if(!s.length){hotEl.innerHTML='<div style="color:var(--text3);font-size:11px;">暂无数据</div>';return;}
-            hotEl.innerHTML=s.map((d,i)=>`
-                <div class="hot-item">
-                    <span class="rk ${i<3?'g':''}">${i+1}</span>
-                    <span class="ht">${esc(d.content.slice(0,25))}</span>
-                    <span class="hl">❤️${d.likes||0}</span>
-                </div>
-            `).join('');
-        }
-
-        function filter(cat){
-            curFilter=cat;
-            document.querySelectorAll('.sidebar .item').forEach(el=>el.classList.toggle('active',el.dataset.cat==cat));
-            toast(cat=='all'?'📋 全部':'🏷️ '+cat);
-        }
-
-        function switchView(v){
-            document.querySelectorAll('.tabs .tab').forEach(el=>el.classList.toggle('active',el.dataset.view==v));
-            toast({dm:'✨ 弹幕模式',hot:'🔥 热榜',mine:'👤 我的'}[v]);
-        }
-
-        async function submit(){
-            const c=document.getElementById('content').value.trim();
-            const n=document.getElementById('nick').value.trim()||'匿名';
-            const j=getJob();
-            const ca=document.getElementById('catS').value;
-            if(!c){toast(t('fill'));return;}
-            const btn=document.getElementById('subBtn');
-            btn.disabled=true; btn.textContent='发送中';
-            try{
-                const { error } = await sb.from('posts').insert({
-                    nickname: n,
-                    content: c,
-                    job: j,
-                    category: ca,
-                    likes: 0,
-                    created_at: Date.now()
-                });
-                if (error) throw error;
-                document.getElementById('content').value=''; document.getElementById('counter').textContent='0';
-                toast('✨ 已发射');
-            }catch(e){toast('发送失败'); console.error(e);}
-            btn.disabled=false; btn.textContent='发射';
-        }
-
-        function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML;}
-        function toast(m){const t=document.getElementById('toast');t.textContent=m;t.style.display='block';setTimeout(()=>t.style.display='none',1800);}
-
-        // 自定义职业切换
-        document.getElementById('jobS').addEventListener('change',function(){
-            const cj=document.getElementById('customJob');
-            cj.style.display=this.value==='__custom__'?'inline-block':'none';
-            if(this.value==='__custom__') cj.focus();
-        });
-
-        // 获取职业值
-        function getJob(){
-            const sel=document.getElementById('jobS');
-            if(sel.value==='__custom__'){
-                const cj=document.getElementById('customJob').value.trim();
-                return cj||'神秘人';
-            }
-            return sel.value;
-        }
-        document.getElementById('content').addEventListener('input',function(){document.getElementById('counter').textContent=this.value.length;});
-        document.getElementById('content').addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();submit();}});
-
-        // ====== 热点话题 ======
-        const hotTopicsZh=[
-            {text:"周一不想上班",cat:"工作",job:"打工人"},{text:"工资什么时候涨",cat:"工作",job:"打工人"},{text:"老板又在画饼了",cat:"工作",job:"老板"},
-            {text:"今晚吃什么",cat:"生活",job:"神秘人"},{text:"早睡早起做不到",cat:"生活",job:"学生"},{text:"为什么总是我买单",cat:"情感",job:"打工人"},
-            {text:"前任结婚了我还单身",cat:"情感",job:"神秘人"},{text:"地铁上有人外放",cat:"生活",job:"打工人"},{text:"代码又报错了",cat:"工作",job:"程序员"},
-            {text:"设计师改回第一版",cat:"工作",job:"设计师"},{text:"考试挂科了",cat:"情感",job:"学生"},{text:"又被老师点名了",cat:"生活",job:"学生"},
-            {text:"今天不加班",cat:"工作",job:"打工人"},{text:"甲方又要改需求",cat:"工作",job:"设计师"},{text:"人生好难",cat:"情感",job:"神秘人"},
-            {text:"周五了嗨起来",cat:"生活",job:"打工人"},{text:"双十一什么都没买",cat:"生活",job:"打工人"},{text:"又在摸鱼",cat:"工作",job:"程序员"}
-        ];
-        const hotTopicsEn=[
-            {text:"Monday blues",cat:"work",job:"打工人"},{text:"When will salary rise",cat:"work",job:"打工人"},{text:"Boss is lying again",cat:"work",job:"老板"},
-            {text:"What's for dinner",cat:"life",job:"神秘人"},{text:"Can't sleep early",cat:"life",job:"学生"},{text:"Always me paying",cat:"love",job:"打工人"},
-            {text:"Ex got married",cat:"love",job:"神秘人"},{text:"Phone speaker on subway",cat:"life",job:"打工人"},{text:"Code broken again",cat:"work",job:"程序员"},
-            {text:"Design back to v1",cat:"work",job:"设计师"},{text:"Failed the exam",cat:"love",job:"学生"},{text:"Called out by teacher",cat:"life",job:"学生"},
-            {text:"No overtime today",cat:"work",job:"打工人"},{text:"Client changed reqs",cat:"work",job:"设计师"},{text:"Life is hard",cat:"love",job:"神秘人"},
-            {text:"Friday let's go",cat:"life",job:"打工人"},{text:"Bought nothing on sale",cat:"life",job:"打工人"},{text:"Slacking off again",cat:"work",job:"程序员"}
-        ];
-        const hotTopicsJa=[
-            {text:"月曜日行きたくない",cat:"work",job:"打工人"},{text:"給料上がらない",cat:"work",job:"打工人"},{text:"上司が嘘つき",cat:"work",job:"老板"},
-            {text:"今夜何食べる",cat:"life",job:"神秘人"},{text:"早起きできない",cat:"life",job:"学生"},{text:"いつも私が払う",cat:"love",job:"打工人"},
-            {text:"元彼が結婚した",cat:"love",job:"神秘人"},{text:"電車で音漏れ",cat:"life",job:"打工人"},{text:"コードが動かない",cat:"work",job:"程序员"},
-            {text:"デザイン戻して",cat:"work",job:"设计师"},{text:"試験落ちた",cat:"love",job:"学生"},{text:"先生に叱られた",cat:"life",job:"学生"},
-            {text:"今日は残業なし",cat:"work",job:"打工人"},{text:"客が要件変更",cat:"work",job:"设计师"},{text:"人生つらい",cat:"love",job:"神秘人"},
-            {text:"金曜日だ!",cat:"life",job:"打工人"}
-        ];
-        const hotTopicsKo=[
-            {text:"월요일싫다",cat:"work",job:"打工人"},{text:"월급언제올라",cat:"work",job:"打工人"},{text:"사장님또거짓말",cat:"work",job:"老板"},
-            {text:"오늘뭐먹지",cat:"life",job:"神秘人"},{text:"일찍자기힘들어",cat:"life",job:"学生"},{text:"왜자꾸내가계산",cat:"love",job:"打工人"},
-            {text:"전애인결혼",cat:"love",job:"神秘人"},{text:"지하철에서소리",cat:"life",job:"打工人"},{text:"코드에러뜸",cat:"work",job:"程序员"},
-            {text:"처음으로돌려달라고",cat:"work",job:"设计师"},{text:"시험떨어짐",cat:"love",job:"学生"},{text:"선생님한테혼남",cat:"life",job:"学生"},
-            {text:"오늘야근없음",cat:"work",job:"打工人"},{text:"클라이언트요구변경",cat:"work",job:"设计师"},{text:"인생힘들다",cat:"love",job:"神秘人"},
-            {text:"금요일이다",cat:"life",job:"打工人"}
-        ];
-        function shuffleHot(){
-            const hotPool=currentLang==='zh'?hotTopicsZh:currentLang==='en'?hotTopicsEn:currentLang==='ja'?hotTopicsJa:hotTopicsKo;
-            const shuffled=[...hotPool].sort(()=>Math.random()-0.5);
-            const tags=document.getElementById('hotTags');
-            tags.innerHTML='<span class="ht-label">🔥 热点</span>';
-            shuffled.slice(0,6).forEach(t=>{
-                const el=document.createElement('span');el.className='ht-item';el.textContent=t.text;
-                el.onclick=()=>{
-                    document.getElementById('content').value=t.text;
-                    document.getElementById('catS').value=t.cat;
-                    document.getElementById('jobS').value=t.job;
-                    document.getElementById('counter').textContent=t.text.length;
-                    document.getElementById('content').focus();
-                };
-                tags.appendChild(el);
-            });
-        }
-        shuffleHot();
-    </script>
+<script>
+// 粒子背景
+const canvas = document.getElementById('particles');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = document.body.scrollHeight;
+const particles = Array.from({length: 50}, () => ({
+  x: Math.random() * canvas.width,
+  y: Math.random() * canvas.height,
+  vx: (Math.random() - 0.5) * 0.5,
+  vy: (Math.random() - 0.5) * 0.5,
+  r: Math.random() * 2 + 1
+}));
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  particles.forEach(p => {
+    p.x += p.vx; p.y += p.vy;
+    if(p.x < 0 || p.x > canvas.width) p.vx *= -1;
+    if(p.y < 0 || p.y > canvas.height) p.vy *= -1;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(102, 126, 234, 0.3)';
+    ctx.fill();
+  });
+  requestAnimationFrame(draw);
+}
+draw();
+window.addEventListener('resize', () => {
+  canvas.width = window.innerWidth;
+  canvas.height = document.body.scrollHeight;
+});
+</script>
 </body>
 </html>
