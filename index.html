@@ -374,39 +374,44 @@
 
         function setLang(lang){
             currentLang=lang;
-            applyLang();
-            toast('Language: '+lang.toUpperCase());
-        }
-
-        function applyLang(){
-            const l=LANG[currentLang];
-            document.querySelector('.logo').innerHTML='<div class="mark">💬</div>'+l.title;
+            // 直接暴力替换所有文字
+            const l=LANG[lang];
+            document.title=l.title;
+            // 顶栏
+            document.querySelector('.logo').childNodes[1].textContent=l.title;
             document.querySelector('[data-view="dm"]').textContent=l.dm;
             document.querySelector('[data-view="hot"]').textContent=l.hot;
             document.querySelector('[data-view="mine"]').textContent=l.mine;
+            // 输入
             document.getElementById('content').placeholder=l.placeholder;
             document.getElementById('subBtn').textContent=l.send;
             document.querySelector('.hint').textContent=l.hint;
-            document.querySelector('.sec-title').textContent=l.cat;
-            // 侧栏分类 - 保留 data-cat 和 onclick
-            const catItems=document.querySelectorAll('.sidebar .item');
-            const catKeys=['all','生活','工作','情感','搞笑','其他'];
-            const catLabels=[l.all,l.life,l.work,l.love,l.funny,l.other];
-            catItems.forEach((el,i)=>{
-                if(i<catLabels.length){
-                    const ic=el.querySelector('.ic').textContent;
+            // 侧栏标题
+            const secTitles=document.querySelectorAll('.sec-title');
+            if(secTitles.length>0) secTitles[0].textContent=l.cat;
+            if(secTitles.length>1) secTitles[1].textContent=l.hotTitle;
+            // 侧栏分类
+            const items=document.querySelectorAll('.sidebar .item');
+            const cats=[l.all,l.life,l.work,l.love,l.funny,l.other];
+            const icons=['📋','🏠','💼','❤️','😂','📌'];
+            items.forEach((el,i)=>{
+                if(i<cats.length){
                     const cnt=el.querySelector('.cnt');
-                    const cat=el.dataset.cat;
-                    el.innerHTML='<span class="ic">'+ic+'</span>'+catLabels[i];
-                    if(cnt) el.appendChild(cnt);
-                    el.dataset.cat=cat||catKeys[i];
-                    if(el.dataset.cat===curFilter) el.classList.add('active');
+                    if(cnt) el.innerHTML='<span class="ic">'+icons[i]+'</span>'+cats[i]+'<span class="cnt">'+cnt.textContent+'</span>';
+                    else el.innerHTML='<span class="ic">'+icons[i]+'</span>'+cats[i];
                 }
             });
-            document.getElementById('hotTitle').textContent=l.hotTitle;
-            document.getElementById('langSelect').value=currentLang;
-            // 热点也重新生成
+            // 空状态
+            const emptyP=document.querySelector('.empty-box p');
+            if(emptyP) emptyP.textContent=l.empty;
+            // 统计文字
+            const statsText=document.querySelector('.stats');
+            if(statsText) statsText.innerHTML='<b id="sCount">'+total+'</b> '+l.stat+' <select id="langSelect" class="lang-picker" onchange="setLang(this.value)"><option value="zh">🇨🇳 中文</option><option value="en">🇺🇸 English</option><option value="ja">🇯🇵 日本語</option><option value="ko">🇰🇷 한국어</option></select>';
+            // 重置选择器
+            document.getElementById('langSelect').value=lang;
+            // 热点
             shuffleHot();
+            toast('🌐 '+lang.toUpperCase());
         }
 
         let total=0, seen={}, catCount={}, curFilter='all', allPosts=[];
