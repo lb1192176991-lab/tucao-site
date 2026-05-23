@@ -184,7 +184,25 @@
         }
         .im select:focus,.im .ni:focus{border-color:rgba(30,215,96,0.3);}
         .im .cc{margin-left:auto;font-size:11px;color:var(--text3);}
-        .hint{font-size:10px;color:rgba(255,255,255,0.05);letter-spacing:.5px;}
+        .hint{font-size:10px;color:rgba(255,255,255,.05);letter-spacing:.5px;}
+        
+        /* 热点标签 */
+        .hot-tags{
+            display:flex;align-items:center;gap:6px;
+            width:100%;max-width:720px;margin-top:-4px;margin-bottom:2px;
+            overflow-x:auto;white-space:nowrap;padding:2px 0;
+        }
+        .hot-tags::-webkit-scrollbar{display:none;}
+        .ht-label{font-size:10px;color:var(--text3);margin-right:4px;flex-shrink:0;}
+        .ht-item{
+            display:inline-flex;align-items:center;gap:4px;
+            padding:3px 12px;border-radius:var(--pill);font-size:11px;
+            background:rgba(30,215,96,0.06);color:var(--text2);
+            cursor:pointer;transition:all .2s;flex-shrink:0;
+            border:1px solid rgba(30,215,96,0.08);
+        }
+        .ht-item:hover{background:rgba(30,215,96,0.12);color:var(--green);transform:scale(1.03);}
+        .ht-item:active{transform:scale(.95);}
 
         .toast{
             position:fixed;bottom:90px;left:50%;transform:translateX(-50%);
@@ -276,6 +294,11 @@
             <span class="cc"><span id="counter">0</span>/120</span>
         </div>
         <div class="hint">⏎ 发送 · 选择分类和身份 · 全部匿名</div>
+    </div>
+    
+    <!-- 热点推荐 -->
+    <div class="hot-tags" id="hotTags">
+        <span class="ht-label">🔥 热点</span>
     </div>
 
     <div class="toast" id="toast"></div>
@@ -430,6 +453,33 @@
         function toast(m){const t=document.getElementById('toast');t.textContent=m;t.style.display='block';setTimeout(()=>t.style.display='none',1800);}
         document.getElementById('content').addEventListener('input',function(){document.getElementById('counter').textContent=this.value.length;});
         document.getElementById('content').addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();submit();}});
+
+        // ====== 热点话题 ======
+        const hotTopics=[
+            {text:"周一不想上班",cat:"工作",job:"打工人"},{text:"工资什么时候涨",cat:"工作",job:"打工人"},{text:"老板又在画饼了",cat:"工作",job:"老板"},
+            {text:"今晚吃什么",cat:"生活",job:"神秘人"},{text:"早睡早起做不到",cat:"生活",job:"学生"},{text:"为什么总是我买单",cat:"情感",job:"打工人"},
+            {text:"前任结婚了我还单身",cat:"情感",job:"神秘人"},{text:"地铁上有人外放",cat:"生活",job:"打工人"},{text:"代码又报错了",cat:"工作",job:"程序员"},
+            {text:"设计师改回第一版",cat:"工作",job:"设计师"},{text:"考试挂科了",cat:"情感",job:"学生"},{text:"又被老师点名了",cat:"生活",job:"学生"},
+            {text:"今天不加班",cat:"工作",job:"打工人"},{text:"甲方又要改需求",cat:"工作",job:"设计师"},{text:"人生好难",cat:"情感",job:"神秘人"},
+            {text:"周五了嗨起来",cat:"生活",job:"打工人"},{text:"双十一什么都没买",cat:"生活",job:"打工人"},{text:"又在摸鱼",cat:"工作",job:"程序员"}
+        ];
+        function shuffleHot(){
+            const shuffled=[...hotTopics].sort(()=>Math.random()-0.5);
+            const tags=document.getElementById('hotTags');
+            tags.innerHTML='<span class="ht-label">🔥 热点</span>';
+            shuffled.slice(0,6).forEach(t=>{
+                const el=document.createElement('span');el.className='ht-item';el.textContent=t.text;
+                el.onclick=()=>{
+                    document.getElementById('content').value=t.text;
+                    document.getElementById('catS').value=t.cat;
+                    document.getElementById('jobS').value=t.job;
+                    document.getElementById('counter').textContent=t.text.length;
+                    document.getElementById('content').focus();
+                };
+                tags.appendChild(el);
+            });
+        }
+        shuffleHot();
     </script>
 </body>
 </html>
