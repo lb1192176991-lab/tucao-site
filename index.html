@@ -3,321 +3,207 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>吐槽墙 · 匿名弹幕</title>
-    <meta name="description" content="匿名弹幕吐槽墙">
+    <title>吐槽墙 · 匿名弹幕社区</title>
+    <meta name="description" content="匿名吐槽弹幕社区，工作生活情感，想吐就吐">
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
     <style>
         :root {
-            --bg-deep: #121212;
-            --bg-surface: #181818;
-            --bg-card: #1f1f1f;
-            --text-primary: #ffffff;
-            --text-secondary: #b3b3b3;
-            --text-muted: #6a6a6a;
-            --accent: #1ed760;
-            --accent-hover: #2ae66d;
-            --border: #4d4d4d;
-            --radius-pill: 9999px;
-            --radius-card: 8px;
-            --shadow: rgba(0,0,0,0.5) 0px 8px 24px;
+            --bg: #121212; --surface: #181818; --card: #1f1f1f;
+            --text: #fff; --text2: #b3b3b3; --text3: #6a6a6a;
+            --green: #1ed760; --green-h: #2ae66d;
+            --red: #f3727f; --blue: #539df5; --orange: #ffa42b;
+            --pill: 9999px; --r: 8px; --shadow: rgba(0,0,0,0.5) 0px 8px 24px;
             --font: 'DM Sans', system-ui, -apple-system, sans-serif;
         }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:var(--font); background:var(--bg); color:var(--text); height:100vh; overflow:hidden; display:flex; flex-direction:column; }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: var(--font);
-            background: var(--bg-deep);
-            color: var(--text-primary);
-            height: 100vh;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* ===== 顶栏 ===== */
+        /* 顶栏 */
         .topbar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 12px 24px;
-            background: var(--bg-deep);
-            flex-shrink: 0;
-            z-index: 10;
+            display:flex; align-items:center; justify-content:space-between;
+            padding:10px 20px; background:var(--bg); flex-shrink:0; z-index:10;
+            border-bottom:1px solid rgba(255,255,255,0.04);
         }
-        .topbar .logo {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 18px;
-            font-weight: 700;
-        }
-        .topbar .logo .mark {
-            width: 32px; height: 32px;
-            background: var(--accent);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 14px;
-            color: #000;
-        }
-        .topbar .stats {
-            font-size: 13px;
-            color: var(--text-secondary);
-            font-weight: 500;
-        }
-        .topbar .stats .num { color: var(--accent); }
+        .topbar .logo { display:flex; align-items:center; gap:8px; font-size:16px; font-weight:700; }
+        .topbar .logo .dot { width:28px; height:28px; background:var(--green); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; color:#000; }
+        .topbar .right { display:flex; align-items:center; gap:14px; font-size:12px; color:var(--text2); }
+        .topbar .right .num { color:var(--green); font-weight:700; }
+        .topbar .right .nav-item { cursor:pointer; padding:4px 10px; border-radius:var(--pill); transition:background .2s; }
+        .topbar .right .nav-item:hover { background:var(--surface); }
+        .topbar .right .nav-item.active { background:rgba(30,215,96,0.1); color:var(--green); }
 
-        /* ===== 弹幕容器 ===== */
+        /* 主体 */
+        .main {
+            flex:1; display:flex; overflow:hidden; position:relative;
+        }
+        /* 侧栏 */
+        .sidebar {
+            width:200px; background:var(--surface); flex-shrink:0;
+            padding:16px; overflow-y:auto; border-right:1px solid rgba(255,255,255,0.04);
+        }
+        .sidebar h3 { font-size:11px; color:var(--text3); text-transform:uppercase; letter-spacing:1.2px; margin-bottom:10px; }
+        .sidebar .menu-item {
+            display:flex; align-items:center; gap:8px; padding:8px 12px;
+            border-radius:var(--pill); font-size:13px; font-weight:500; color:var(--text2);
+            cursor:pointer; transition:all .15s; margin-bottom:2px;
+        }
+        .sidebar .menu-item:hover { background:var(--card); color:var(--text); }
+        .sidebar .menu-item.active { background:rgba(30,215,96,0.1); color:var(--green); }
+        .sidebar .divider { height:1px; background:rgba(255,255,255,0.04); margin:12px 0; }
+
+        /* 弹幕区域 */
         #danmaku-container {
-            flex: 1;
-            position: relative;
-            overflow: hidden;
-            background: var(--bg-deep);
+            flex:1; position:relative; overflow:hidden; background:var(--bg);
         }
         #danmaku-container::before {
-            content: "TUCΛO";
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: clamp(80px, 18vw, 160px);
-            font-weight: 800;
-            color: rgba(255,255,255,0.015);
-            letter-spacing: 16px;
-            pointer-events: none;
-            user-select: none;
+            content:"TUCΛO"; position:absolute; top:50%; left:50%;
+            transform:translate(-50%,-50%); font-size:clamp(80px,18vw,160px);
+            font-weight:800; color:rgba(255,255,255,0.012); letter-spacing:16px;
+            pointer-events:none; user-select:none;
         }
-
         .empty-state {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            text-align: center;
-            color: var(--text-muted);
-            pointer-events: none;
-            z-index: 0;
+            position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+            text-align:center; color:var(--text3); pointer-events:none; z-index:0;
         }
-        .empty-state .emoji { font-size: 56px; margin-bottom: 12px; }
-        .empty-state p { font-size: 15px; font-weight: 500; }
+        .empty-state .e { font-size:48px; margin-bottom:8px; }
+        .empty-state p { font-size:14px; }
 
-        /* ===== 弹幕 ===== */
+        /* 弹幕 */
         .danmaku {
-            position: absolute;
-            white-space: nowrap;
-            font-size: 14px;
-            padding: 10px 18px;
-            border-radius: var(--radius-pill);
-            pointer-events: none;
-            animation: fly 10s linear forwards;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: var(--bg-card);
-            border: 1px solid rgba(255,255,255,0.06);
-            box-shadow: var(--shadow);
+            position:absolute; white-space:nowrap; font-size:13px;
+            padding:8px 16px; border-radius:var(--pill); pointer-events:none;
+            animation:fly 10s linear forwards; display:flex; align-items:center; gap:6px;
+            background:var(--card); border:1px solid rgba(255,255,255,0.05);
+            box-shadow:var(--shadow);
         }
-
         @keyframes fly {
-            0% { transform: translateX(100vw) scale(0.9); opacity: 0; }
-            4% { transform: translateX(calc(100vw - 30px)) scale(1); opacity: 1; }
-            85% { opacity: 1; }
-            100% { transform: translateX(-120%) scale(0.95); opacity: 0; }
+            0%{transform:translateX(100vw) scale(.9); opacity:0}
+            4%{transform:translateX(calc(100vw - 30px)) scale(1); opacity:1}
+            85%{opacity:1}
+            100%{transform:translateX(-120%) scale(.95); opacity:0}
         }
-
-        .danmaku .job-tag {
-            font-size: 11px;
-            padding: 3px 10px;
-            border-radius: var(--radius-pill);
-            font-weight: 600;
-            text-transform: capitalize;
+        .danmaku .tag {
+            font-size:10px; padding:2px 8px; border-radius:var(--pill); font-weight:600;
         }
-        .tag-boss { background: rgba(243,114,127,0.15); color: #f3727f; }
-        .tag-worker { background: rgba(83,157,245,0.15); color: #539df5; }
-        .tag-student { background: rgba(30,215,96,0.15); color: #1ed760; }
-        .tag-teacher { background: rgba(255,164,43,0.15); color: #ffa42b; }
-        .tag-coder { background: rgba(30,215,96,0.12); color: #1ed760; }
-        .tag-designer { background: rgba(255,164,43,0.12); color: #ffa42b; }
-        .tag-doctor { background: rgba(243,114,127,0.12); color: #f3727f; }
-        .tag-seller { background: rgba(83,157,245,0.12); color: #539df5; }
-        .tag-masked { background: rgba(179,179,179,0.12); color: #b3b3b3; }
+        .t-boss{background:rgba(243,114,127,.15);color:#f3727f}
+        .t-worker{background:rgba(83,157,245,.15);color:#539df5}
+        .t-student{background:rgba(30,215,96,.15);color:#1ed760}
+        .t-teacher{background:rgba(255,164,43,.15);color:#ffa42b}
+        .t-coder{background:rgba(30,215,96,.12);color:#1ed760}
+        .t-designer{background:rgba(255,164,43,.12);color:#ffa42b}
+        .t-doctor{background:rgba(243,114,127,.12);color:#f3727f}
+        .t-seller{background:rgba(83,157,245,.12);color:#539df5}
+        .t-masked{background:rgba(179,179,179,.12);color:#b3b3b3}
+        .danmaku .nick{font-size:11px;color:var(--text3)}
+        .danmaku .txt{font-weight:400;color:var(--text2)}
 
-        .danmaku .nick {
-            font-size: 12px;
-            color: var(--text-muted);
-        }
-        .danmaku .text {
-            font-weight: 400;
-            color: var(--text-secondary);
-        }
-
-        .danmaku:nth-child(7n+1) { border-color: rgba(30,215,96,0.12); }
-        .danmaku:nth-child(7n+3) { border-color: rgba(83,157,245,0.1); }
-        .danmaku:nth-child(7n+5) { border-color: rgba(243,114,127,0.1); }
-        .danmaku:nth-child(7n+0) { border-color: rgba(255,164,43,0.1); }
-
-        /* ===== 输入区 ===== */
+        /* 输入 */
         .input-area {
-            background: var(--bg-deep);
-            padding: 12px 24px 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-            flex-shrink: 0;
-            border-top: 1px solid rgba(255,255,255,0.04);
+            background:var(--bg); padding:10px 20px 16px; display:flex;
+            flex-direction:column; align-items:center; gap:8px; flex-shrink:0;
+            border-top:1px solid rgba(255,255,255,0.04);
         }
-
         .input-row {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            width: 100%;
-            max-width: 680px;
-            background: var(--bg-surface);
-            border-radius: var(--radius-pill);
-            padding: 4px 4px 4px 20px;
-            border: 1px solid transparent;
-            transition: border-color 0.2s;
+            display:flex; align-items:center; gap:8px; width:100%; max-width:720px;
+            background:var(--surface); border-radius:var(--pill); padding:3px 3px 3px 16px;
+            border:1px solid transparent; transition:border-color .2s;
         }
-        .input-row:focus-within {
-            border-color: var(--accent);
-        }
-
+        .input-row:focus-within { border-color:var(--green); }
         .input-row input {
-            flex: 1;
-            background: transparent;
-            border: none;
-            padding: 12px 8px;
-            color: var(--text-primary);
-            font-size: 15px;
-            font-family: var(--font);
-            outline: none;
+            flex:1; background:transparent; border:none; padding:10px 8px;
+            color:var(--text); font-size:14px; font-family:var(--font); outline:none;
         }
-        .input-row input::placeholder { color: var(--text-muted); }
-
+        .input-row input::placeholder { color:var(--text3); }
         .input-row .btn {
-            background: var(--accent);
-            color: #000;
-            border: none;
-            border-radius: var(--radius-pill);
-            padding: 10px 28px;
-            font-size: 14px;
-            font-weight: 700;
-            font-family: var(--font);
-            cursor: pointer;
-            transition: background 0.2s, transform 0.15s;
-            white-space: nowrap;
-            text-transform: uppercase;
-            letter-spacing: 1.4px;
+            background:var(--green); color:#000; border:none; border-radius:var(--pill);
+            padding:8px 22px; font-size:13px; font-weight:700; font-family:var(--font);
+            cursor:pointer; transition:background .2s, transform .15s; white-space:nowrap;
+            text-transform:uppercase; letter-spacing:1.2px;
         }
-        .input-row .btn:hover { background: var(--accent-hover); transform: scale(1.02); }
-        .input-row .btn:active { transform: scale(0.97); }
-        .input-row .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-
+        .input-row .btn:hover { background:var(--green-h); transform:scale(1.02); }
+        .input-row .btn:active { transform:scale(.97); }
+        .input-row .btn:disabled { opacity:.4; cursor:not-allowed; transform:none; }
         .input-meta {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            width: 100%;
-            max-width: 680px;
-            font-size: 13px;
-            color: var(--text-muted);
+            display:flex; align-items:center; gap:10px; width:100%; max-width:720px;
+            font-size:12px; color:var(--text3);
         }
-
-        .job-select {
-            background: var(--bg-surface);
-            border: 1px solid rgba(255,255,255,0.06);
-            border-radius: var(--radius-pill);
-            padding: 6px 32px 6px 14px;
-            color: var(--text-secondary);
-            font-size: 13px;
-            font-family: var(--font);
-            font-weight: 500;
-            outline: none;
-            cursor: pointer;
-            appearance: none;
-            -webkit-appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%236a6a6a' d='M5 7L1 3h8z'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 12px center;
-            transition: border-color 0.2s;
+        .job-select, .cat-select {
+            background:var(--surface); border:1px solid rgba(255,255,255,.05);
+            border-radius:var(--pill); padding:5px 28px 5px 12px; color:var(--text2);
+            font-size:12px; font-family:var(--font); font-weight:500; outline:none;
+            cursor:pointer; appearance:none; -webkit-appearance:none;
+            background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%236a6a6a' d='M5 7L1 3h8z'/%3E%3C/svg%3E");
+            background-repeat:no-repeat; background-position:right 10px center;
         }
-        .job-select:focus { border-color: var(--accent); }
-
         .name-input {
-            background: var(--bg-surface);
-            border: 1px solid rgba(255,255,255,0.06);
-            border-radius: var(--radius-pill);
-            padding: 6px 14px;
-            color: var(--text-secondary);
-            font-size: 13px;
-            font-family: var(--font);
-            font-weight: 500;
-            width: 100px;
-            outline: none;
-            transition: border-color 0.2s;
+            background:var(--surface); border:1px solid rgba(255,255,255,.05);
+            border-radius:var(--pill); padding:5px 12px; color:var(--text2);
+            font-size:12px; font-family:var(--font); font-weight:500;
+            width:80px; outline:none;
         }
-        .name-input:focus { border-color: var(--accent); }
-        .name-input::placeholder { color: var(--text-muted); }
+        .name-input:focus, .job-select:focus, .cat-select:focus { border-color:var(--green); }
+        .name-input::placeholder { color:var(--text3); }
+        .char-count { margin-left:auto; font-size:11px; color:var(--text3); }
+        .hint { font-size:10px; color:rgba(255,255,255,.06); letter-spacing:.3px; }
 
-        .char-count {
-            margin-left: auto;
-            font-size: 12px;
-            color: var(--text-muted);
-            font-weight: 500;
+        /* 热榜 */
+        .hot-list {
+            font-size:12px; color:var(--text2); line-height:1.8;
         }
-
-        .hint {
-            font-size: 11px;
-            color: rgba(255,255,255,0.08);
-            letter-spacing: 0.5px;
-            font-weight: 500;
+        .hot-item {
+            display:flex; align-items:center; gap:6px; padding:4px 0;
+            border-bottom:1px solid rgba(255,255,255,.03); cursor:pointer;
         }
+        .hot-item .rank { font-weight:700; font-size:11px; width:18px; color:var(--text3); }
+        .hot-item .rank.top3 { color:var(--green); }
+        .hot-item .hot-text { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; }
+        .hot-item .hot-like { font-size:10px; color:var(--text3); }
 
-        /* ===== Toast ===== */
         .toast {
-            position: fixed;
-            bottom: 100px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--bg-card);
-            color: var(--text-secondary);
-            padding: 10px 24px;
-            border-radius: var(--radius-pill);
-            font-size: 14px;
-            font-weight: 500;
-            display: none;
-            z-index: 999;
-            border: 1px solid rgba(255,255,255,0.06);
-            box-shadow: var(--shadow);
+            position:fixed; bottom:100px; left:50%; transform:translateX(-50%);
+            background:var(--card); color:var(--text2); padding:8px 20px;
+            border-radius:var(--pill); font-size:13px; font-weight:500; display:none;
+            z-index:999; border:1px solid rgba(255,255,255,.05); box-shadow:var(--shadow);
         }
 
-        @media (max-width: 600px) {
-            .topbar { padding: 10px 16px; }
-            .input-area { padding: 10px 16px 16px; }
-            .input-meta { flex-wrap: wrap; gap: 8px; }
-            .name-input { width: 80px; }
+        @media(max-width:768px){
+            .sidebar{display:none}
         }
     </style>
 </head>
 <body>
 
     <div class="topbar">
-        <div class="logo">
-            <div class="mark">💬</div>
-            <span>吐槽墙</span>
+        <div class="logo"><span class="dot">💬</span><span>吐槽墙</span></div>
+        <div class="right">
+            <span class="nav-item active" onclick="switchView('danmaku')">✨ 弹幕</span>
+            <span class="nav-item" onclick="switchView('hot')">🔥 热榜</span>
+            <span class="nav-item" onclick="switchView('mine')">👤 我的</span>
+            <span><span class="num" id="statsCount">0</span> 条</span>
         </div>
-        <div class="stats"><span class="num" id="statsCount">0</span> 条弹幕</div>
     </div>
 
-    <div id="danmaku-container">
-        <div class="empty-state" id="emptyState">
-            <div class="emoji">💬</div>
-            <p>第一条吐槽在等你</p>
+    <div class="main">
+        <div class="sidebar" id="sidebar">
+            <h3>浏览</h3>
+            <div class="menu-item active" onclick="filterCategory('all')" data-cat="all">📋 全部</div>
+            <div class="menu-item" onclick="filterCategory('工作')" data-cat="工作">💼 工作</div>
+            <div class="menu-item" onclick="filterCategory('生活')" data-cat="生活">🏠 生活</div>
+            <div class="menu-item" onclick="filterCategory('情感')" data-cat="情感">❤️ 情感</div>
+            <div class="menu-item" onclick="filterCategory('搞笑')" data-cat="搞笑">😂 搞笑</div>
+            <div class="menu-item" onclick="filterCategory('其他')" data-cat="其他">📌 其他</div>
+            <div class="divider"></div>
+            <h3>🔥 热榜</h3>
+            <div class="hot-list" id="hotList"><div style="color:var(--text3);font-size:11px;">加载中...</div></div>
+        </div>
+
+        <div id="danmaku-container">
+            <div class="empty-state" id="emptyState">
+                <div class="e">💬</div>
+                <p>第一条吐槽在等你</p>
+            </div>
         </div>
     </div>
 
@@ -327,6 +213,13 @@
             <button class="btn" id="submitBtn" onclick="submitPost()">发射</button>
         </div>
         <div class="input-meta">
+            <select class="cat-select" id="catSelect">
+                <option value="生活">🏠 生活</option>
+                <option value="工作">💼 工作</option>
+                <option value="情感">❤️ 情感</option>
+                <option value="搞笑">😂 搞笑</option>
+                <option value="其他">📌 其他</option>
+            </select>
             <select class="job-select" id="jobSelect">
                 <option value="打工人">💼 打工人</option>
                 <option value="老板">👔 老板</option>
@@ -341,107 +234,123 @@
             <input class="name-input" type="text" id="nickname" placeholder="匿名" maxlength="10">
             <span class="char-count"><span id="counter">0</span>/120</span>
         </div>
-        <div class="hint">ENTER 发送 · 选择身份 · 所有人可见</div>
+        <div class="hint">ENTER 发送 · 选择分类 · 所有人可见</div>
     </div>
 
     <div class="toast" id="toast"></div>
 
     <script>
         const firebaseConfig = {
-            apiKey: "AIzaSyDA-zk7rLU7o8litC1BlURyocYprLqAb80",
-            authDomain: "planning-with-ai-e9272.firebaseapp.com",
-            databaseURL: "https://venting-and-complaining-default-rtdb.firebaseio.com",
-            projectId: "planning-with-ai-e9272",
-            storageBucket: "planning-with-ai-e9272.firebasestorage.app",
-            messagingSenderId: "207850905652",
-            appId: "1:207850905652:web:f158f5b24b98ebad93aa61"
+            apiKey:"AIzaSyDA-zk7rLU7o8litC1BlURyocYprLqAb80",
+            authDomain:"planning-with-ai-e9272.firebaseapp.com",
+            databaseURL:"https://venting-and-complaining-default-rtdb.firebaseio.com",
+            projectId:"planning-with-ai-e9272",
+            storageBucket:"planning-with-ai-e9272.firebasestorage.app",
+            messagingSenderId:"207850905652",
+            appId:"1:207850905652:web:f158f5b24b98ebad93aa61"
         };
         firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-        const postsRef = db.ref('posts');
-        const container = document.getElementById('danmaku-container');
-        const statsEl = document.getElementById('statsCount');
-        const emptyEl = document.getElementById('emptyState');
+        const db=firebase.database();
+        const postsRef=db.ref('posts');
+        const container=document.getElementById('danmaku-container');
+        const statsEl=document.getElementById('statsCount');
+        const emptyEl=document.getElementById('emptyState');
+        const hotEl=document.getElementById('hotList');
 
-        const jobTags = {
-            '打工人':'tag-worker','老板':'tag-boss','学生':'tag-student',
-            '老师':'tag-teacher','程序员':'tag-coder','设计师':'tag-designer',
-            '医生':'tag-doctor','销售':'tag-seller','神秘人':'tag-masked'
-        };
-        const jobEmoji = {
-            '打工人':'💼','老板':'👔','学生':'🎒','老师':'📚',
-            '程序员':'💻','设计师':'🎨','医生':'🏥','销售':'📊','神秘人':'🥷'
-        };
+        const jobTags={'打工人':'t-worker','老板':'t-boss','学生':'t-student','老师':'t-teacher','程序员':'t-coder','设计师':'t-designer','医生':'t-doctor','销售':'t-seller','神秘人':'t-masked'};
+        const jobEmo={'打工人':'💼','老板':'👔','学生':'🎒','老师':'📚','程序员':'💻','设计师':'🎨','医生':'🏥','销售':'📊','神秘人':'🥷'};
 
-        let total = 0;
-        let seen = new Set();
+        let total=0, seen=new Set(), currentFilter='all', allPosts=[];
 
         postsRef.once('value', snap => {
-            const data = snap.val();
-            if (!data) return;
-            emptyEl.style.display = 'none';
-            const entries = Object.entries(data);
-            total = entries.length;
-            statsEl.textContent = total;
-            entries.forEach(([k, d], i) => {
+            const data=snap.val();
+            if(!data) return;
+            emptyEl.style.display='none';
+            const entries=Object.entries(data);
+            total=entries.length;
+            statsEl.textContent=total;
+            allPosts=[];
+            entries.forEach(([k,d])=>{
                 seen.add(k);
-                setTimeout(() => { if (d && d.content) launch(d); }, i * 120);
+                if(d&&d.content) allPosts.push(d);
+                setTimeout(()=>{if(d&&d.content&&(currentFilter=='all'||d.category==currentFilter)) launch(d);},0);
             });
+            updateHot();
         });
 
         postsRef.limitToLast(1).on('child_added', snap => {
-            const d = snap.val();
-            if (!d || !d.content || seen.has(snap.key)) return;
+            const d=snap.val();
+            if(!d||!d.content||seen.has(snap.key)) return;
             seen.add(snap.key);
-            emptyEl.style.display = 'none';
-            total++; statsEl.textContent = total;
-            launch(d);
+            emptyEl.style.display='none';
+            total++; statsEl.textContent=total;
+            allPosts.push(d);
+            if(currentFilter=='all'||d.category==currentFilter) launch(d);
+            updateHot();
         });
 
-        function launch(d) {
-            const lines = 6;
-            const lh = window.innerHeight / lines;
-            const line = Math.floor(Math.random() * lines);
-            const top = line * lh + lh * 0.15;
-            const dur = 9 + Math.random() * 4;
-
-            const job = d.job || '神秘人';
-            const tag = jobTags[job] || 'tag-masked';
-            const emoji = jobEmoji[job] || '🥷';
-
-            const el = document.createElement('div');
-            el.className = 'danmaku';
-            el.innerHTML = `
-                <span class="job-tag ${tag}">${emoji} ${job}</span>
-                <span class="nick">${esc(d.nickname || '匿名')}</span>
-                <span class="text">${esc(d.content)}</span>
-            `;
-            el.style.top = top + 'px';
-            el.style.animationDuration = dur + 's';
+        function launch(d){
+            const lines=6; const lh=window.innerHeight/lines;
+            const line=Math.floor(Math.random()*lines);
+            const top=line*lh+lh*0.15; const dur=9+Math.random()*4;
+            const job=d.job||'神秘人'; const tag=jobTags[job]||'t-masked'; const em=jobEmo[job]||'🥷';
+            const cat=d.category?' #'+d.category:'';
+            const el=document.createElement('div');
+            el.className='danmaku';
+            el.innerHTML=`<span class="tag ${tag}">${em} ${job}</span><span class="nick">${esc(d.nickname||'匿名')}</span><span class="txt">${esc(d.content)}</span>`;
+            el.style.top=top+'px'; el.style.animationDuration=dur+'s';
             container.appendChild(el);
-            setTimeout(() => el.remove(), (dur + 2) * 1000);
+            setTimeout(()=>el.remove(),(dur+2)*1000);
         }
 
-        async function submitPost() {
-            const c = document.getElementById('content').value.trim();
-            const n = document.getElementById('nickname').value.trim() || '匿名';
-            const j = document.getElementById('jobSelect').value;
-            if (!c) { toast('写点内容再发射'); return; }
-            const btn = document.getElementById('submitBtn');
-            btn.disabled = true; btn.textContent = '发送中';
-            try {
-                await postsRef.push({nickname:n,content:c,job:j,createdAt:firebase.database.ServerValue.TIMESTAMP});
-                document.getElementById('content').value = '';
-                document.getElementById('counter').textContent = '0';
+        function updateHot(){
+            const sorted=[...allPosts].sort((a,b)=>(b.likes||0)-(a.likes||0)).slice(0,10);
+            if(sorted.length===0){hotEl.innerHTML='<div style="color:var(--text3);font-size:11px;">暂无热榜</div>';return;}
+            hotEl.innerHTML=sorted.map((d,i)=>`
+                <div class="hot-item">
+                    <span class="rank ${i<3?'top3':''}">${i+1}</span>
+                    <span class="hot-text">${esc(d.content.slice(0,30))}</span>
+                    <span class="hot-like">❤️ ${d.likes||0}</span>
+                </div>
+            `).join('');
+        }
+
+        function filterCategory(cat){
+            currentFilter=cat;
+            document.querySelectorAll('.menu-item').forEach(el=>el.classList.toggle('active',el.dataset.cat==cat));
+            toast(cat=='all'?'显示全部':'分类: '+cat);
+        }
+
+        function switchView(v){
+            document.querySelectorAll('.nav-item').forEach(e=>e.classList.remove('active'));
+            event.target.classList.add('active');
+            toast({danmaku:'✨ 弹幕模式',hot:'🔥 热榜',mine:'👤 我的'}[v]);
+        }
+
+        async function submitPost(){
+            const c=document.getElementById('content').value.trim();
+            const n=document.getElementById('nickname').value.trim()||'匿名';
+            const j=document.getElementById('jobSelect').value;
+            const ca=document.getElementById('catSelect').value;
+            if(!c){toast('写点内容再发射'); return;}
+            const btn=document.getElementById('submitBtn');
+            btn.disabled=true; btn.textContent='发送中';
+            try{
+                await postsRef.push({
+                    nickname:n, content:c, job:j, category:ca, likes:0,
+                    createdAt:firebase.database.ServerValue.TIMESTAMP
+                });
+                document.getElementById('content').value='';
+                document.getElementById('counter').textContent='0';
                 toast('已发射 ✨');
-            } catch(e) { toast('发送失败'); }
-            btn.disabled = false; btn.textContent = '发射';
+            }catch(e){toast('发送失败');}
+            btn.disabled=false; btn.textContent='发射';
         }
 
-        function esc(t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
-        function toast(m) { const t = document.getElementById('toast'); t.textContent = m; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 2000); }
-        document.getElementById('content').addEventListener('input', function() { document.getElementById('counter').textContent = this.value.length; });
-        document.getElementById('content').addEventListener('keydown', function(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitPost(); } });
+        function esc(t){const d=document.createElement('div'); d.textContent=t; return d.innerHTML;}
+        function toast(m){const t=document.getElementById('toast'); t.textContent=m; t.style.display='block'; setTimeout(()=>t.style.display='none',2000);}
+        document.getElementById('content').addEventListener('input',function(){document.getElementById('counter').textContent=this.value.length;});
+        document.getElementById('content').addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault(); submitPost();}});
     </script>
 </body>
 </html>
