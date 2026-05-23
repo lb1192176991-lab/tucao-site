@@ -1,243 +1,321 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>吐槽墙 · 匿名弹幕社区</title>
-    <meta name="description" content="匿名吐槽弹幕社区，工作生活情感，想吐就吐。实时弹幕、热榜排行、分类浏览。">
-    <meta property="og:title" content="吐槽墙 · 匿名弹幕社区">
-    <meta property="og:description" content="匿名吐槽弹幕社区，工作生活情感，想吐就吐">
-    <meta property="og:image" content="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' rx='20' fill='%231ed760'/%3E%3Ctext x='100' y='130' text-anchor='middle' font-size='80' fill='black'%3E💬%3C/text%3E%3C/svg%3E">
-    <meta property="og:url" content="https://tucao-wall.netlify.app">
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231ed760'/%3E%3Ctext x='16' y='23' text-anchor='middle' font-size='18' fill='black'%3E💬%3C/text%3E%3C/svg%3E">
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
-    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
-    <style>
-        :root {
-            --bg:#0f0f0f; --surface:#161616; --card:#1e1e1e; --card-h:#252525;
-            --text:#f0f0f0; --t2:#9a9a9a; --t3:#5a5a5a;
-            --green:#1ed760; --green-h:#2ae66d; --green-dim:rgba(30,215,96,0.08);
-            --red:#f3727f; --blue:#539df5; --orange:#ffa42b;
-            --pill:9999px; --r:8px; --r2:12px;
-            --shadow:0 8px 30px rgba(0,0,0,.5); --shadow-sm:0 2px 8px rgba(0,0,0,.3);
-            --font:'DM Sans',-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;
-        }
-        *{margin:0;padding:0;box-sizing:border-box;scrollbar-width:thin;scrollbar-color:#2a2a2a transparent;}
-        ::-webkit-scrollbar{width:4px;}
-        ::-webkit-scrollbar-thumb{background:#2a2a2a;border-radius:4px;}
-        body{font-family:var(--font);background:var(--bg);color:var(--text);height:100dvh;overflow:hidden;display:flex;flex-direction:column;}
-        /* 顶栏 */
-        .tb{display:flex;align-items:center;justify-content:space-between;padding:0 20px;height:52px;background:var(--bg);flex-shrink:0;border-bottom:1px solid rgba(255,255,255,.04);z-index:100;position:relative;}
-        .tb .logo{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:700;}
-        .tb .logo .mk{width:30px;height:30px;background:linear-gradient(135deg,var(--green),#17b34a);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;color:#000;}
-        .tb .tabs{display:flex;align-items:center;gap:4px;background:var(--surface);border-radius:var(--pill);padding:3px;}
-        .tb .tabs .tab{padding:6px 16px;border-radius:var(--pill);font-size:13px;font-weight:500;color:var(--t3);cursor:pointer;transition:all .2s;user-select:none;}
-        .tb .tabs .tab:hover{color:var(--t2);}
-        .tb .tabs .tab.on{background:var(--card);color:var(--text);}
-        .tb .stats{font-size:12px;color:var(--t3);display:flex;align-items:center;gap:6px;}
-        .tb .stats b{color:var(--green);font-weight:700;}
-        /* 主体 */
-        .main{flex:1;display:flex;overflow:hidden;position:relative;}
-        /* 侧栏 */
-        .sb{width:200px;background:var(--bg);flex-shrink:0;padding:16px 12px;overflow-y:auto;border-right:1px solid rgba(255,255,255,.04);}
-        .sb .st{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;padding:0 8px;}
-        .sb .it{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--r);font-size:13px;font-weight:500;color:var(--t2);cursor:pointer;transition:all .15s;margin-bottom:1px;}
-        .sb .it:hover{background:var(--surface);color:var(--text);}
-        .sb .it.on{background:var(--green-dim);color:var(--green);}
-        .sb .it .ic{font-size:15px;width:20px;text-align:center;}
-        .sb .it .cnt{margin-left:auto;font-size:11px;color:var(--t3);}
-        .sb .hr{height:1px;background:rgba(255,255,255,.04);margin:14px 8px;}
-        .sb .ht-it{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:var(--r);cursor:pointer;transition:background .15s;}
-        .sb .ht-it:hover{background:var(--surface);}
-        .sb .ht-it .rk{font-weight:700;font-size:12px;width:20px;text-align:center;color:var(--t3);}
-        .sb .ht-it .rk.g{color:var(--green);}
-        .sb .ht-it .ht{font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;color:var(--t2);}
-        .sb .ht-it .hl{font-size:10px;color:var(--t3);}
-        /* 弹幕容器 */
-        #dm{flex:1;position:relative;overflow:hidden;background:var(--bg);}
-        #dm::before{content:"TUCΛO";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:clamp(80px,18vw,150px);font-weight:800;color:rgba(255,255,255,.008);letter-spacing:14px;pointer-events:none;user-select:none;}
-        .empty{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;color:var(--t3);pointer-events:none;z-index:0;}
-        .empty .e{font-size:44px;margin-bottom:6px;}
-        .empty p{font-size:13px;}
-        /* 弹幕 */
-        .dm{position:absolute;white-space:nowrap;font-size:13px;padding:7px 14px;border-radius:var(--pill);pointer-events:auto;animation:fly 11s linear forwards;display:flex;align-items:center;gap:6px;background:var(--card);border:1px solid rgba(255,255,255,.04);box-shadow:var(--shadow-sm);}
-        .dm:hover{background:var(--card-h);}
-        @keyframes fly{0%{transform:translateX(100vw) scale(.9);opacity:0}3%{transform:translateX(calc(100vw - 30px)) scale(1);opacity:1}85%{opacity:1}100%{transform:translateX(-120%) scale(.95);opacity:0}}
-        .dm .j{font-size:10px;padding:2px 8px;border-radius:var(--pill);font-weight:600;}
-        .j-boss{background:rgba(243,114,127,.15);color:#f3727f}
-        .j-worker{background:rgba(83,157,245,.15);color:#539df5}
-        .j-student{background:rgba(30,215,96,.15);color:#1ed760}
-        .j-teacher{background:rgba(255,164,43,.15);color:#ffa42b}
-        .j-coder{background:rgba(30,215,96,.12);color:#1ed760}
-        .j-designer{background:rgba(255,164,43,.12);color:#ffa42b}
-        .j-doctor{background:rgba(243,114,127,.12);color:#f3727f}
-        .j-seller{background:rgba(83,157,245,.12);color:#539df5}
-        .j-masked{background:rgba(150,150,150,.12);color:#999}
-        .dm .n{font-size:11px;color:var(--t3)}
-        .dm .t{font-weight:400;color:var(--t2)}
-        .dm .like-btn{font-size:11px;color:var(--t3);cursor:pointer;margin-left:4px;padding:2px 6px;border-radius:var(--pill);transition:all .15s;pointer-events:auto;}
-        .dm .like-btn:hover{background:rgba(30,215,96,.1);color:var(--green);}
-        .dm .like-btn.liked{color:var(--green);}
-        .dm .like-btn .lc{font-size:10px;margin-left:2px;}
-        /* 输入 */
-        .ia{background:var(--bg);padding:10px 20px 14px;display:flex;flex-direction:column;align-items:center;gap:8px;flex-shrink:0;border-top:1px solid rgba(255,255,255,.04);}
-        .ir{display:flex;align-items:center;gap:8px;width:100%;max-width:720px;background:var(--surface);border-radius:var(--pill);padding:3px 3px 3px 16px;border:1px solid rgba(255,255,255,.06);transition:border-color .25s;}
-        .ir:focus-within{border-color:rgba(30,215,96,.3);}
-        .ir input{flex:1;background:transparent;border:none;padding:10px 8px;color:var(--text);font-size:14px;font-family:var(--font);outline:none;}
-        .ir input::placeholder{color:var(--t3);}
-        .ir .btn{background:var(--green);color:#000;border:none;border-radius:var(--pill);padding:8px 22px;font-size:12px;font-weight:700;font-family:var(--font);cursor:pointer;transition:all .15s;white-space:nowrap;text-transform:uppercase;letter-spacing:1px;}
-        .ir .btn:hover{background:var(--green-h);transform:scale(1.03);}
-        .ir .btn:active{transform:scale(.97);}
-        .ir .btn:disabled{opacity:.4;cursor:not-allowed;transform:none;}
-        .im{display:flex;align-items:center;gap:8px;width:100%;max-width:720px;font-size:12px;color:var(--t3);}
-        .im select,.im .ni{background:var(--surface);border:1px solid rgba(255,255,255,.05);border-radius:var(--pill);padding:4px 24px 4px 10px;color:var(--t2);font-size:11px;font-family:var(--font);font-weight:500;outline:none;cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3E%3Cpath fill='%235a5a5a' d='M4 6L1 2h6z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;transition:border-color .2s;}
-        .im .ni{width:80px;cursor:text;background-image:none;padding:4px 10px;}
-        .im select:focus,.im .ni:focus{border-color:rgba(30,215,96,.3);}
-        .im .cc{margin-left:auto;font-size:11px;color:var(--t3);}
-        .hint{font-size:10px;color:rgba(255,255,255,.05);}
-        /* 设置面板 */
-        .settings-panel{position:fixed;bottom:160px;right:20px;background:var(--card);border-radius:var(--r2);padding:14px;border:1px solid rgba(255,255,255,.06);box-shadow:var(--shadow);display:none;z-index:50;min-width:180px;}
-        .settings-panel.show{display:block;}
-        .settings-panel h4{font-size:12px;color:var(--t2);margin-bottom:10px;}
-        .settings-panel .row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;font-size:12px;color:var(--t3);}
-        .settings-panel .row input[type=range]{width:80px;}
-        .settings-btn{position:fixed;bottom:160px;right:20px;width:36px;height:36px;border-radius:50%;background:var(--card);border:1px solid rgba(255,255,255,.06);color:var(--t2);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:49;transition:background .2s;}
-        .settings-btn:hover{background:var(--card-h);}
-        /* Toast */
-        .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--card);color:var(--t2);padding:8px 20px;border-radius:var(--pill);font-size:12px;font-weight:500;display:none;z-index:999;border:1px solid rgba(255,255,255,.05);box-shadow:var(--shadow);}
-        /* 响应 */
-        @media(max-width:768px){.sb{display:none;}.tb .tabs .tab{padding:5px 12px;font-size:12px;}}
-        @media(max-width:480px){.im{flex-wrap:wrap;gap:6px;}.im .ni{width:70px;}.im .cc{margin-left:0;}.tb{padding:0 12px;}.ia{padding:8px 12px 12px;}}
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>吐槽墙 · 匿名发声</title>
+<meta name="description" content="匿名吐槽社区，没人知道你是谁，但你的声音会被听见。">
+<meta property="og:title" content="吐槽墙 · 匿名发声">
+<meta property="og:description" content="匿名吐槽社区，没人知道你是谁，但你的声音会被听见。">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231ed760'/%3E%3Ctext x='16' y='23' text-anchor='middle' font-size='18' fill='black'%3E💬%3C/text%3E%3C/svg%3E">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;background:#0a0a0a;color:#fff;height:100vh;overflow:hidden;}
+
+/* 全屏弹幕层 */
+#danmaku-layer{
+    position:fixed;top:0;left:0;right:0;bottom:120px;
+    overflow:hidden;background:#0a0a0a;
+    background-image:
+        radial-gradient(ellipse at 20% 30%, rgba(30,215,96,0.04) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 70%, rgba(108,92,231,0.03) 0%, transparent 50%);
+}
+#danmaku-layer::before{
+    content:"TUCΛO WALL";position:absolute;
+    top:50%;left:50%;transform:translate(-50%,-50%);
+    font-size:clamp(60px,12vw,120px);font-weight:800;
+    color:rgba(255,255,255,0.012);letter-spacing:8px;
+    pointer-events:none;user-select:none;
+}
+
+/* 弹幕 */
+.danmaku{
+    position:absolute;white-space:nowrap;
+    font-size:15px;font-weight:500;padding:12px 24px;
+    border-radius:100px;pointer-events:auto;cursor:default;
+    animation:fly 12s linear forwards;
+    display:flex;align-items:center;gap:10px;
+    background:rgba(30,30,30,0.7);
+    backdrop-filter:blur(20px);
+    border:1px solid rgba(255,255,255,0.06);
+    box-shadow:0 4px 30px rgba(0,0,0,0.3);
+    transition:transform 0.2s,background 0.2s;
+}
+.danmaku:hover{background:rgba(40,40,40,0.8);transform:scale(1.02);}
+@keyframes fly{
+    0%{transform:translateX(100vw) scale(0.9);opacity:0}
+    3%{transform:translateX(calc(100vw - 40px)) scale(1);opacity:1}
+    88%{opacity:1}
+    100%{transform:translateX(-120%) scale(0.95);opacity:0}
+}
+.danmaku .badge{
+    font-size:11px;padding:4px 12px;border-radius:100px;font-weight:600;letter-spacing:0.3px;
+}
+.b-boss{background:rgba(243,114,127,0.15);color:#f3727f}
+.b-worker{background:rgba(83,157,245,0.15);color:#539df5}
+.b-student{background:rgba(30,215,96,0.15);color:#1ed760}
+.b-teacher{background:rgba(255,164,43,0.15);color:#ffa42b}
+.b-coder{background:rgba(30,215,96,0.12);color:#1ed760}
+.b-designer{background:rgba(255,164,43,0.12);color:#ffa42b}
+.b-doctor{background:rgba(243,114,127,0.12);color:#f3727f}
+.b-seller{background:rgba(83,157,245,0.12);color:#539df5}
+.b-masked{background:rgba(150,150,150,0.12);color:#999}
+.danmaku .nick{font-size:13px;color:rgba(255,255,255,0.4);}
+.danmaku .text{font-weight:400;color:rgba(255,255,255,0.85);}
+.danmaku .like-btn{
+    font-size:13px;color:rgba(255,255,255,0.3);cursor:pointer;
+    margin-left:4px;padding:2px 8px;border-radius:100px;
+    transition:all 0.2s;user-select:none;
+}
+.danmaku .like-btn:hover{color:#1ed760;background:rgba(30,215,96,0.08);}
+.danmaku .like-btn.liked{color:#1ed760;}
+
+/* 空状态 */
+.empty-state{
+    position:absolute;top:50%;left:50%;transform:translate(-50%,-70%);
+    text-align:center;pointer-events:none;
+}
+.empty-state .icon{font-size:72px;margin-bottom:16px;}
+.empty-state h2{font-size:28px;font-weight:600;color:rgba(255,255,255,0.15);margin-bottom:8px;letter-spacing:-0.5px;}
+.empty-state p{font-size:15px;color:rgba(255,255,255,0.08);}
+
+/* 统计 */
+.stats{
+    position:fixed;top:24px;right:32px;z-index:20;
+    font-size:13px;color:rgba(255,255,255,0.15);font-weight:400;
+}
+.stats strong{color:#1ed760;font-weight:600;}
+
+/* 底部输入 */
+.bottom-bar{
+    position:fixed;bottom:0;left:0;right:0;z-index:30;
+    background:linear-gradient(0deg, #0a0a0a 60%, transparent);
+    padding:30px 40px 32px;
+    display:flex;flex-direction:column;align-items:center;
+}
+.bottom-bar .tagline{
+    font-size:13px;color:rgba(255,255,255,0.08);
+    margin-bottom:16px;letter-spacing:2px;text-transform:uppercase;
+    font-weight:500;
+}
+.bottom-bar .input-group{
+    display:flex;align-items:center;gap:12px;
+    width:100%;max-width:700px;
+    background:rgba(30,30,30,0.6);
+    backdrop-filter:blur(20px);
+    border:1px solid rgba(255,255,255,0.06);
+    border-radius:100px;
+    padding:6px 6px 6px 24px;
+    transition:border-color 0.3s,box-shadow 0.3s;
+}
+.bottom-bar .input-group:focus-within{
+    border-color:rgba(30,215,96,0.2);
+    box-shadow:0 0 0 4px rgba(30,215,96,0.04);
+}
+.bottom-bar .input-group input{
+    flex:1;background:transparent;border:none;
+    padding:14px 8px;color:#fff;font-size:16px;
+    font-family:'Inter',sans-serif;outline:none;
+}
+.bottom-bar .input-group input::placeholder{color:rgba(255,255,255,0.15);}
+.bottom-bar .input-group .send-btn{
+    background:#1ed760;color:#000;border:none;
+    border-radius:100px;padding:10px 32px;
+    font-size:14px;font-weight:600;font-family:'Inter',sans-serif;
+    cursor:pointer;transition:all 0.2s;
+    white-space:nowrap;letter-spacing:0.5px;
+}
+.bottom-bar .input-group .send-btn:hover{background:#2ae66d;transform:scale(1.02);}
+.bottom-bar .input-group .send-btn:active{transform:scale(0.97);}
+.bottom-bar .input-group .send-btn:disabled{opacity:0.3;cursor:not-allowed;transform:none;}
+
+.bottom-bar .options{
+    display:flex;align-items:center;gap:12px;margin-top:14px;
+    width:100%;max-width:700px;
+}
+.bottom-bar .options select,.bottom-bar .options input{
+    background:rgba(30,30,30,0.4);
+    border:1px solid rgba(255,255,255,0.04);
+    border-radius:100px;padding:6px 28px 6px 14px;
+    color:rgba(255,255,255,0.5);font-size:12px;
+    font-family:'Inter',sans-serif;outline:none;cursor:pointer;
+    appearance:none;-webkit-appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3E%3Cpath fill='rgba(255,255,255,0.2)' d='M4 6L1 2h6z'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 10px center;
+    transition:border-color 0.2s;
+}
+.bottom-bar .options select:focus,.bottom-bar .options input:focus{
+    border-color:rgba(30,215,96,0.15);
+}
+.bottom-bar .options .name-input{
+    width:100px;cursor:text;background-image:none;padding:6px 14px;
+}
+.bottom-bar .options .char-count{
+    margin-left:auto;font-size:11px;color:rgba(255,255,255,0.12);
+}
+
+/* Toast */
+.toast{
+    position:fixed;bottom:140px;left:50%;transform:translateX(-50%);
+    background:rgba(30,30,30,0.9);color:rgba(255,255,255,0.7);
+    padding:12px 28px;border-radius:100px;font-size:14px;font-weight:500;
+    display:none;z-index:999;
+    backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.06);
+    box-shadow:0 8px 30px rgba(0,0,0,0.5);
+}
+
+/* 响应 */
+@media(max-width:600px){
+    .bottom-bar{padding:20px 16px 24px;}
+    .bottom-bar .input-group{padding:4px 4px 4px 16px;}
+    .bottom-bar .input-group input{font-size:15px;padding:12px 6px;}
+    .bottom-bar .input-group .send-btn{padding:8px 20px;font-size:13px;}
+    .bottom-bar .options{flex-wrap:wrap;gap:8px;}
+    .bottom-bar .options .name-input{width:80px;}
+    .stats{top:16px;right:16px;font-size:12px;}
+    .danmaku{font-size:14px;padding:10px 18px;}
+}
+</style>
 </head>
 <body>
-<div class="tb">
-    <div class="logo"><div class="mk">💬</div>吐槽墙</div>
-    <div class="tabs">
-        <div class="tab on" data-v="dm" onclick="sw('dm')">✨ 弹幕</div>
-        <div class="tab" data-v="hot" onclick="sw('hot')">🔥 热榜</div>
-        <div class="tab" data-v="mine" onclick="sw('mine')">👤 我的</div>
+
+<div id="danmaku-layer">
+    <div class="empty-state" id="emptyState">
+        <div class="icon">💬</div>
+        <h2>还没有吐槽</h2>
+        <p>写下你想说的</p>
     </div>
-    <div class="stats">🌙 <b id="sC">0</b> 条</div>
 </div>
-<div class="main">
-    <div class="sb">
-        <div class="st">📂 分类</div>
-        <div class="it on" data-c="all" onclick="fl('all')"><span class="ic">📋</span>全部<span class="cnt" id="cAll">0</span></div>
-        <div class="it" data-c="生活" onclick="fl('生活')"><span class="ic">🏠</span>生活<span class="cnt" id="c生活">0</span></div>
-        <div class="it" data-c="工作" onclick="fl('工作')"><span class="ic">💼</span>工作<span class="cnt" id="c工作">0</span></div>
-        <div class="it" data-c="情感" onclick="fl('情感')"><span class="ic">❤️</span>情感<span class="cnt" id="c情感">0</span></div>
-        <div class="it" data-c="搞笑" onclick="fl('搞笑')"><span class="ic">😂</span>搞笑<span class="cnt" id="c搞笑">0</span></div>
-        <div class="it" data-c="其他" onclick="fl('其他')"><span class="ic">📌</span>其他<span class="cnt" id="c其他">0</span></div>
-        <div class="hr"></div>
-        <div class="st">🔥 热榜 Top 10</div>
-        <div id="hotL"><div style="color:var(--t3);font-size:11px;">加载中...</div></div>
+
+<div class="stats"><strong id="statCount">0</strong> 条发声</div>
+
+<div class="bottom-bar">
+    <div class="tagline">✦ 匿名发声 · 人人可见 ✦</div>
+    <div class="input-group">
+        <input type="text" id="contentInput" placeholder="今天想吐槽什么？" maxlength="200" autofocus>
+        <button class="send-btn" id="sendBtn" onclick="submitPost()">发送</button>
     </div>
-    <div id="dm"></div>
-</div>
-<div class="ia">
-    <div class="ir"><input id="ct" placeholder="今天想吐槽什么？" maxlength="120" autofocus><button class="btn" id="sbBtn" onclick="sub()">发射</button></div>
-    <div class="im">
-        <select id="catS"><option>🏠 生活</option><option>💼 工作</option><option>❤️ 情感</option><option>😂 搞笑</option><option>📌 其他</option></select>
-        <select id="jobS"><option>💼 打工人</option><option>👔 老板</option><option>🎒 学生</option><option>📚 老师</option><option>💻 程序员</option><option>🎨 设计师</option><option>🏥 医生</option><option>📊 销售</option><option>🥷 神秘人</option></select>
-        <input class="ni" id="nk" placeholder="匿名" maxlength="10">
-        <span class="cc"><span id="cntr">0</span>/120</span>
+    <div class="options">
+        <select id="categorySelect">
+            <option>🏠 生活</option><option>💼 工作</option>
+            <option>❤️ 情感</option><option>😂 搞笑</option><option>📌 其他</option>
+        </select>
+        <select id="jobSelect">
+            <option>💼 打工人</option><option>👔 老板</option>
+            <option>🎒 学生</option><option>📚 老师</option>
+            <option>💻 程序员</option><option>🎨 设计师</option>
+            <option>🏥 医生</option><option>📊 销售</option><option>🥷 神秘人</option>
+        </select>
+        <input class="name-input" type="text" id="nameInput" placeholder="匿名" maxlength="10">
+        <span class="char-count"><span id="charCount">0</span>/200</span>
     </div>
-    <div class="hint">⏎ 发送 · 身份匿名 · 点弹幕👍</div>
 </div>
+
 <div class="toast" id="toast"></div>
 
 <script>
-const FB={apiKey:"AIzaSyDA-zk7rLU7o8litC1BlURyocYprLqAb80",authDomain:"planning-with-ai-e9272.firebaseapp.com",databaseURL:"https://venting-and-complaining-default-rtdb.firebaseio.com",projectId:"planning-with-ai-e9272",storageBucket:"planning-with-ai-e9272.firebasestorage.app",messagingSenderId:"207850905652",appId:"1:207850905652:web:f158f5b24b98ebad93aa61"};
-firebase.initializeApp(FB); const db=firebase.database(), ref=db.ref('posts');
-const ctx=document.getElementById('dm'), sC=document.getElementById('sC'), empty=document.createElement('div');
-empty.className='empty'; empty.innerHTML='<div class="e">💬</div><p>还没有吐槽</p>'; ctx.appendChild(empty);
-const hotL=document.getElementById('hotL');
-const JT={'打工人':'j-worker','老板':'j-boss','学生':'j-student','老师':'j-teacher','程序员':'j-coder','设计师':'j-designer','医生':'j-doctor','销售':'j-seller','神秘人':'j-masked'};
-const JE={'打工人':'💼','老板':'👔','学生':'🎒','老师':'📚','程序员':'💻','设计师':'🎨','医生':'🏥','销售':'📊','神秘人':'🥷'};
-let total=0, seen={}, catC={}, filter='all', allPosts=[], dmSpeed=1;
+const firebaseConfig = {
+    apiKey:"AIzaSyDA-zk7rLU7o8litC1BlURyocYprLqAb80",
+    authDomain:"planning-with-ai-e9272.firebaseapp.com",
+    databaseURL:"https://venting-and-complaining-default-rtdb.firebaseio.com",
+    projectId:"planning-with-ai-e9272",
+    storageBucket:"planning-with-ai-e9272.firebasestorage.app",
+    messagingSenderId:"207850905652",
+    appId:"1:207850905652:web:f158f5b24b98ebad93aa61"
+};
+firebase.initializeApp(firebaseConfig);
+const db=firebase.database();
+const ref=db.ref('posts');
 
-ref.once('value', snap => {
-    const d=snap.val(); if(!d) return;
-    empty.style.display='none';
-    const es=Object.entries(d); total=es.length; sC.textContent=total;
-    es.forEach(([k,v],i)=>{
-        seen[k]=1;
-        if(v&&v.content){
-            allPosts.push({key:k,...v});
-            const c=v.category||'其他'; catC[c]=(catC[c]||0)+1;
-            if(filter=='all'||c==filter) setTimeout(()=>launch(v),i*80);
-        }
-    });
-    upCnt(); upHot();
+const layer=document.getElementById('danmaku-layer');
+const statEl=document.getElementById('statCount');
+const emptyEl=document.getElementById('emptyState');
+
+const jobTags={'打工人':'b-worker','老板':'b-boss','学生':'b-student','老师':'b-teacher','程序员':'b-coder','设计师':'b-designer','医生':'b-doctor','销售':'b-seller','神秘人':'b-masked'};
+const jobEmoji={'打工人':'💼','老板':'👔','学生':'🎒','老师':'📚','程序员':'💻','设计师':'🎨','医生':'🏥','销售':'📊','神秘人':'🥷'};
+
+let total=0, seen={};
+
+ref.once('value', snap=>{
+    const data=snap.val();
+    if(data){
+        emptyEl.style.display='none';
+        const entries=Object.entries(data);
+        total=entries.length;
+        statEl.textContent=total;
+        entries.forEach(([k,v],i)=>{
+            seen[k]=1;
+            if(v&&v.content) setTimeout(()=>launch(v),i*60);
+        });
+    }
 });
 
-ref.limitToLast(1).on('child_added', snap => {
+ref.limitToLast(1).on('child_added', snap=>{
     const d=snap.val();
     if(!d||!d.content||seen[snap.key]) return;
-    seen[snap.key]=1; empty.style.display='none';
-    total++; sC.textContent=total;
-    const c=d.category||'其他'; catC[c]=(catC[c]||0)+1;
-    upCnt();
-    allPosts.push({key:snap.key,...d});
-    if(filter=='all'||c==filter) launch(d);
-    upHot();
+    seen[snap.key]=1;
+    emptyEl.style.display='none';
+    total++;
+    statEl.textContent=total;
+    launch(d);
 });
 
 function launch(d){
     if(!d||!d.content) return;
-    const lines=5; const lh=window.innerHeight/lines;
+    const lines=6;
+    const lh=window.innerHeight/lines;
     const line=Math.floor(Math.random()*lines);
-    const top=line*lh+lh*0.2; const dur=(9+Math.random()*5)/dmSpeed;
-    const job=d.job||'神秘人'; const tag=JT[job]||'j-masked'; const em=JE[job]||'🥷';
-    const el=document.createElement('div'); el.className='dm';
-    el.innerHTML=`<span class="j ${tag}">${em} ${job}</span><span class="n">${esc(d.nickname||'匿名')}</span><span class="t">${esc(d.content)}</span><span class="like-btn" onclick="like(this,${d.likes||0})">👍<span class="lc">${d.likes||0}</span></span>`;
-    el.style.top=top+'px'; el.style.animationDuration=dur+'s';
-    ctx.appendChild(el);
+    const top=20+line*lh;
+    const dur=10+Math.random()*4;
+
+    const job=d.job||'神秘人';
+    const tag=jobTags[job]||'b-masked';
+    const emoji=jobEmoji[job]||'🥷';
+
+    const el=document.createElement('div');
+    el.className='danmaku';
+    el.innerHTML=`
+        <span class="badge ${tag}">${emoji} ${d.job||'神秘人'}</span>
+        <span class="nick">${esc(d.nickname||'匿名')}</span>
+        <span class="text">${esc(d.content)}</span>
+        <span class="like-btn" onclick="toggleLike(this,${d.likes||0})">👍 <span class="like-count">${d.likes||0}</span></span>
+    `;
+    el.style.top=top+'px';
+    el.style.animationDuration=dur+'s';
+    layer.appendChild(el);
     setTimeout(()=>el.remove(),(dur+2)*1000);
 }
 
-function like(el,cur){
+function toggleLike(el,cur){
     el.classList.toggle('liked');
-    const lc=el.querySelector('.lc');
-    if(el.classList.contains('liked')) lc.textContent=cur+1;
-    else lc.textContent=cur;
+    const count=el.querySelector('.like-count');
+    count.textContent=el.classList.contains('liked')?cur+1:cur;
 }
 
-function upCnt(){
-    ['生活','工作','情感','搞笑','其他'].forEach(k=>{const e=document.getElementById('c'+k);if(e)e.textContent=catC[k]||0;});
-    document.getElementById('cAll').textContent=total;
-}
-
-function upHot(){
-    const s=allPosts.sort((a,b)=>(b.likes||0)-(a.likes||0)).slice(0,10);
-    if(!s.length){hotL.innerHTML='<div style="color:var(--t3);font-size:11px;">暂无</div>';return;}
-    hotL.innerHTML=s.map((d,i)=>`<div class="ht-it"><span class="rk ${i<3?'g':''}">${i+1}</span><span class="ht">${esc((d.content||'').slice(0,25))}</span><span class="hl">❤️${d.likes||0}</span></div>`).join('');
-}
-
-function fl(c){filter=c; document.querySelectorAll('.sb .it').forEach(e=>e.classList.toggle('on',e.dataset.c==c)); toast(c=='all'?'📋 全部':'🏷️ '+c);}
-function sw(v){document.querySelectorAll('.tabs .tab').forEach(e=>e.classList.toggle('on',e.dataset.v==v)); toast({dm:'✨ 弹幕',hot:'🔥 热榜',mine:'👤 我的'}[v]);}
-
-async function sub(){
-    const c=document.getElementById('ct').value.trim();
-    const n=document.getElementById('nk').value.trim()||'匿名';
-    const j=document.getElementById('jobS').value.replace(/.*?\s/,'');
-    const ca=document.getElementById('catS').value.replace(/.*?\s/,'');
-    if(!c){toast('写点内容');return;}
-    const btn=document.getElementById('sbBtn'); btn.disabled=true; btn.textContent='发送中';
+async function submitPost(){
+    const content=document.getElementById('contentInput').value.trim();
+    const name=document.getElementById('nameInput').value.trim()||'匿名';
+    const job=document.getElementById('jobSelect').value.replace(/^.\s/,'');
+    const category=document.getElementById('categorySelect').value.replace(/^.\s/,'');
+    if(!content){toast('写点内容再发送');return;}
+    const btn=document.getElementById('sendBtn');
+    btn.disabled=true;btn.textContent='发送中';
     try{
-        await ref.push({nickname:n,content:c,job:j,category:ca,likes:0,createdAt:firebase.database.ServerValue.TIMESTAMP});
-        document.getElementById('ct').value=''; document.getElementById('cntr').textContent='0';
-        toast('✨ 已发射');
+        await ref.push({nickname:name,content,job,category,likes:0,createdAt:firebase.database.ServerValue.TIMESTAMP});
+        document.getElementById('contentInput').value='';
+        document.getElementById('charCount').textContent='0';
+        toast('已发声 ✦');
     }catch(e){toast('发送失败');}
-    btn.disabled=false; btn.textContent='发射';
+    btn.disabled=false;btn.textContent='发送';
 }
 
 function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML;}
-function toast(m){const t=document.getElementById('toast');t.textContent=m;t.style.display='block';setTimeout(()=>t.style.display='none',1800);}
-document.getElementById('ct').addEventListener('input',function(){document.getElementById('cntr').textContent=this.value.length;});
-document.getElementById('ct').addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sub();}});
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.style.display='block';setTimeout(()=>t.style.display='none',2000);}
+document.getElementById('contentInput').addEventListener('input',function(){document.getElementById('charCount').textContent=this.value.length;});
+document.getElementById('contentInput').addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();submitPost();}});
 </script>
 </body>
 </html>
